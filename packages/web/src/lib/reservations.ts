@@ -1,14 +1,16 @@
 import type { FloorPlanSize, Reservation } from "@sit-happens/shared";
+import * as DateTime from "effect/DateTime";
+import * as Duration from "effect/Duration";
 import type { CSSProperties } from "react";
+
+function localNow(): DateTime.Zoned {
+  return DateTime.setZone(DateTime.nowUnsafe(), DateTime.zoneMakeLocal());
+}
 
 export function todayISO(): string {
   // Local date, not UTC — the tablet's clock is the restaurant's actual
-  // local time, and toISOString() would show the wrong day near midnight.
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  // local time, and a UTC-based date would show the wrong day near midnight.
+  return DateTime.formatIsoDate(localNow());
 }
 
 // Both FloorPlan and LayoutEditor render the room canvas through this one
@@ -36,28 +38,47 @@ export function tableNamesLabel(tables: { id: number; name: string }[], tableIds
     .join(" + ");
 }
 
-// Postgres `time` columns come back over the wire as "HH:MM:SS" — this is
-// the one place that gets trimmed to "HH:MM" for display.
-export function formatTime(time: string): string {
-  return time.slice(0, 5);
-}
-
-function toMinutes(time: string): number {
+// A "time of day" (no date, e.g. "09:00" or the "09:00:00" Postgres sends
+// over the wire) modeled as elapsed time since midnight — Duration is the
+// natural fit since these values have no date component for DateTime to
+// anchor to. Every function below funnels through this one parse/format
+// pair instead of hand-rolling its own H:M string math.
+export function parseTimeOfDay(time: string): Duration.Duration {
   const [h, m] = time.split(":").map(Number);
-  return h * 60 + m;
+  return Duration.sum(Duration.hours(h), Duration.minutes(m));
 }
 
-export function addMinutes(time: string, minutes: number): string {
-  const total = (toMinutes(time) + minutes + 24 * 60) % (24 * 60);
-  const h = Math.floor(total / 60);
-  const m = total % 60;
+export function formatTimeOfDay(duration: Duration.Duration): string {
+  const wrapped = ((Math.round(Duration.toMinutes(duration)) % 1440) + 1440) % 1440;
+  const h = Math.floor(wrapped / 60);
+  const m = wrapped % 60;
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
-function timeRangesOverlap(aStart: string, aDuration: number, bStart: string, bDuration: number): boolean {
-  const aFrom = toMinutes(aStart);
-  const bFrom = toMinutes(bStart);
-  return aFrom < bFrom + bDuration && bFrom < aFrom + aDuration;
+// Postgres `time` columns come back over the wire as "HH:MM:SS" — this is
+// the one place that gets trimmed to "HH:MM" for display.
+export function formatTime(time: string): string {
+  return formatTimeOfDay(parseTimeOfDay(time));
+}
+
+export function addMinutes(time: string, minutes: number): string {
+  return formatTimeOfDay(Duration.sum(parseTimeOfDay(time), Duration.minutes(minutes)));
+}
+
+// Now, rounded up to the next 15-minute mark — used to default the time
+// field when starting a new reservation.
+export function defaultReservationTime(): string {
+  const parts = DateTime.toParts(localNow());
+  const roundedMinute = Math.ceil(parts.minute / 15) * 15;
+  return formatTimeOfDay(Duration.sum(Duration.hours(parts.hour), Duration.minutes(roundedMinute)));
+}
+
+function timeRangesOverlap(aStart: string, aDurationMin: number, bStart: string, bDurationMin: number): boolean {
+  const aFrom = Duration.toMinutes(parseTimeOfDay(aStart));
+  const aTo = aFrom + aDurationMin;
+  const bFrom = Duration.toMinutes(parseTimeOfDay(bStart));
+  const bTo = bFrom + bDurationMin;
+  return aFrom < bTo && bFrom < aTo;
 }
 
 // Other reservations sharing any of the given tables on the same date whose

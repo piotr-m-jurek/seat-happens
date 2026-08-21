@@ -10,14 +10,8 @@ import { useMemo, useState, type FormEvent } from "react";
 import { reservationsAtom, selectedDateAtom, tablesAtom } from "../atoms";
 import { useCollection } from "../atoms/collection";
 import { reservationsRepo } from "../data/reservationsRepo";
-import { addMinutes, formatTime, overlappingReservations, tableNamesLabel } from "../lib/reservations";
+import { addMinutes, defaultReservationTime, formatTime, overlappingReservations, tableNamesLabel } from "../lib/reservations";
 import type { ReservationDraft } from "./AppShell";
-
-function defaultTime(): string {
-  const now = new Date();
-  now.setMinutes(Math.ceil(now.getMinutes() / 15) * 15, 0, 0);
-  return now.toTimeString().slice(0, 5);
-}
 
 export function ReservationForm({ draft, onClose }: { draft: ReservationDraft; onClose: () => void }) {
   const tables = useCollection(tablesAtom);
@@ -33,7 +27,7 @@ export function ReservationForm({ draft, onClose }: { draft: ReservationDraft; o
   const [guestName, setGuestName] = useState(existing?.guestName ?? "");
   const [partySize, setPartySize] = useState(existing?.partySize ?? 2);
   const [date, setDate] = useState(existing?.date ?? selectedDate);
-  const [startTime, setStartTime] = useState(existing?.startTime ?? defaultTime());
+  const [startTime, setStartTime] = useState(existing?.startTime ?? defaultReservationTime());
   const [durationMin, setDurationMin] = useState(existing?.durationMin ?? 90);
   const [notes, setNotes] = useState(existing?.notes ?? "");
   const [error, setError] = useState<string | null>(null);
@@ -149,7 +143,14 @@ export function ReservationForm({ draft, onClose }: { draft: ReservationDraft; o
             </div>
             <div className="space-y-2">
               <Label htmlFor="time">Time</Label>
-              <Input id="time" type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} required />
+              <Input
+                id="time"
+                type="time"
+                step="900"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                required
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="duration">Duration (min)</Label>
