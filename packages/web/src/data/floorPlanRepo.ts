@@ -8,29 +8,36 @@ function toSize(row: any): FloorPlanSize {
 }
 
 export const floorPlanRepo: FloorPlanRepo = {
-  async get() {
-    const { data, error } = await supabase.from("floor_plan").select("*").eq("id", 1).maybeSingle();
+  async get(restaurantId) {
+    const { data, error } = await supabase
+      .from("floor_plan")
+      .select("*")
+      .eq("restaurant_id", restaurantId)
+      .maybeSingle();
     if (error) throw error;
     return data ? toSize(data) : DEFAULT_SIZE;
   },
 
-  async update(patch) {
+  async update(restaurantId, patch) {
     const { data, error } = await supabase
       .from("floor_plan")
-      .update(patch)
-      .eq("id", 1)
+      .upsert({ restaurant_id: restaurantId, ...DEFAULT_SIZE, ...patch }, { onConflict: "restaurant_id" })
       .select()
       .single();
     if (error) throw error;
     return toSize(data);
   },
 
-  subscribe(cb) {
+  subscribe(restaurantId, cb) {
     const channel = supabase
-      .channel("floor-plan-changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "floor_plan" }, () => {
-        this.get().then(cb).catch(console.error);
-      })
+      .channel(`floor-plan-changes-${restaurantId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "floor_plan", filter: `restaurant_id=eq.${restaurantId}` },
+        () => {
+          this.get(restaurantId).then(cb).catch(console.error);
+        }
+      )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);

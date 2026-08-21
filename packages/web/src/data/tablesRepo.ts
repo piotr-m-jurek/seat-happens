@@ -14,14 +14,18 @@ function toTable(row: any): Table {
 }
 
 export const tablesRepo: TablesRepo = {
-  async list() {
-    const { data, error } = await supabase.from("tables").select("*").order("id");
+  async list(restaurantId) {
+    const { data, error } = await supabase.from("tables").select("*").eq("restaurant_id", restaurantId).order("id");
     if (error) throw error;
     return data.map(toTable);
   },
 
-  async create(table: NewTable) {
-    const { data, error } = await supabase.from("tables").insert(table).select().single();
+  async create(restaurantId, table: NewTable) {
+    const { data, error } = await supabase
+      .from("tables")
+      .insert({ ...table, restaurant_id: restaurantId })
+      .select()
+      .single();
     if (error) throw error;
     return toTable(data);
   },
@@ -42,12 +46,16 @@ export const tablesRepo: TablesRepo = {
     if (error) throw error;
   },
 
-  subscribe(cb) {
+  subscribe(restaurantId, cb) {
     const channel = supabase
-      .channel("tables-changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "tables" }, () => {
-        this.list().then(cb).catch(console.error);
-      })
+      .channel(`tables-changes-${restaurantId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "tables", filter: `restaurant_id=eq.${restaurantId}` },
+        () => {
+          this.list(restaurantId).then(cb).catch(console.error);
+        }
+      )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);

@@ -27,20 +27,21 @@ function toRow(reservation: Partial<NewReservation>) {
 }
 
 export const reservationsRepo: ReservationsRepo = {
-  async listByDate(date) {
+  async listByDate(restaurantId, date) {
     const { data, error } = await supabase
       .from("reservations")
       .select("*")
+      .eq("restaurant_id", restaurantId)
       .eq("date", date)
       .order("start_time");
     if (error) throw error;
     return data.map(toReservation);
   },
 
-  async create(reservation) {
+  async create(restaurantId, reservation) {
     const { data, error } = await supabase
       .from("reservations")
-      .insert(toRow(reservation))
+      .insert({ ...toRow(reservation), restaurant_id: restaurantId })
       .select()
       .single();
     if (error) throw error;
@@ -63,13 +64,18 @@ export const reservationsRepo: ReservationsRepo = {
     if (error) throw error;
   },
 
-  subscribeByDate(date, cb) {
-    const refresh = () => this.listByDate(date).then(cb).catch(console.error);
+  subscribeByDate(restaurantId, date, cb) {
+    const refresh = () => this.listByDate(restaurantId, date).then(cb).catch(console.error);
     const channel = supabase
-      .channel(`reservations-changes-${date}`)
+      .channel(`reservations-changes-${restaurantId}-${date}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "reservations", filter: `date=eq.${date}` },
+        {
+          event: "*",
+          schema: "public",
+          table: "reservations",
+          filter: `restaurant_id=eq.${restaurantId}`,
+        },
         refresh
       )
       .subscribe();

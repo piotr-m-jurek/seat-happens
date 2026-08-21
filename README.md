@@ -1,18 +1,36 @@
 # Sit Happens
 
-A very simple tablet app for a small restaurant to manage table reservations:
+A very simple multi-restaurant tablet app for managing table reservations:
 a top-down floor plan, tap a table to book it, an agenda view for the day,
 and a drag-and-drop editor to lay out the tables to match the real room.
+Each restaurant lives at its own URL (`/r/:slug`), fully isolated from every
+other restaurant in the same deployment.
 
-- **Frontend**: React + Vite + Tailwind + shadcn/ui, in `packages/web`
+- **Frontend**: React + Vite + Tailwind + shadcn/ui, in `packages/web`.
+  Client state runs on `@effect/atom-react` (`packages/web/src/atoms`) —
+  every Supabase repo's fetch+subscribe is bridged into an Effect `Stream`,
+  so realtime subscriptions are scoped to atom lifetime automatically.
+  Routing is a small hand-rolled router (`lib/router.ts`) — three route
+  shapes didn't justify a library.
 - **Backend**: [Supabase](https://supabase.com) (Postgres + Auth with email
   OTP + Realtime) — there is no custom server. Authorization is enforced by
   Postgres Row Level Security policies, defined in `supabase/migrations`.
-- **Shared types**: `packages/shared` — the `Table`/`Reservation`/`Staff`
-  types and repo interfaces (`AuthRepo`, `TablesRepo`, `ReservationsRepo`)
-  that `packages/web/src/data/*Repo.ts` implements against Supabase. If this
-  ever moves to a different backend (or adds phone/SMS OTP alongside email),
+- **Shared types**: `packages/shared` — the `Table`/`Reservation`/`Staff`/
+  `Restaurant` types and repo interfaces that `packages/web/src/data/*Repo.ts`
+  implements against Supabase. If this ever moves to a different backend,
   only that `data/` folder needs to change.
+
+## Roles
+
+- **Super-admin**: you (or anyone in the `super_admins` table). Creates
+  restaurants and assigns each one's first owner, via `/admin`.
+- **Owner**: full read/write access to their restaurant, plus the "Staff"
+  tab to invite/remove viewers.
+- **Viewer**: read-only. Every write action (new/edit/cancel reservations,
+  the Layout tab, the Staff tab) is hidden in the UI and rejected by RLS if
+  attempted directly.
+
+One `staff` row per person — an email belongs to exactly one restaurant.
 
 ## 1. Create the Supabase project
 
@@ -32,25 +50,27 @@ and a drag-and-drop editor to lay out the tables to match the real room.
 4. Grab the project's **URL** and **anon public key** from
    **Settings → API**.
 
-## 2. One-time: add yourself to `staff`
+## 2. One-time: bootstrap your super-admin account
 
-The `staff` table controls who can log in and use the app. There's no admin
-UI for this in v1 — it's one manual step:
+This is the only step that still needs raw SQL — everything after it is
+self-service through the app itself.
 
-1. Log in to the app once with the email that should have access. This
-   creates a row in Supabase's built-in `auth.users` table.
+1. Log in to the app once with the email that should be the super-admin.
+   This creates a row in Supabase's built-in `auth.users` table (you'll land
+   on "Not set up yet" — that's expected, you're not staff of a restaurant
+   yet, just about to become the platform's admin).
 2. In the Supabase SQL editor (or via `bunx supabase db query --linked`), run:
 
    ```sql
-   insert into staff (id, email, role)
-   select id, email, 'owner'
-   from auth.users
-   where email = 'you@example.com';
+   insert into super_admins (id)
+   select id from auth.users where email = 'you@example.com';
    ```
-
-Repeat for any additional staff emails later — this is also where the system
-grows into real multi-staff RBAC: add more rows, and use `role` for each
-person's `('owner' | 'staff' | 'viewer')` access.
+3. Reload the app and go to `/admin`. Create your first restaurant there,
+   entering your own email as its owner — you'll get access the next time
+   you sign in (the "Not set up yet" screen will resolve on your next login,
+   or just reload). From then on, that restaurant's owner uses the **Staff**
+   tab to invite viewers, and you use `/admin` to create more restaurants —
+   no more manual SQL for onboarding anyone else.
 
 ## 3. Local development
 
@@ -61,8 +81,9 @@ cp packages/web/.env.example packages/web/.env
 bun run dev
 ```
 
-Open the printed local URL. Log in with a staff email (step 2), or before
-that's set up you'll see a "Not set up yet" message after verifying the OTP.
+Open the printed local URL. Logging in with no restaurant yet redirects to
+"Not set up yet"; a staff member's own restaurant redirects to `/r/:slug`
+automatically. Super-admins can always reach `/admin` directly.
 
 ## 4. Deploy
 

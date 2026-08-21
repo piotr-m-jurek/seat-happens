@@ -20,11 +20,11 @@ export const authRepo: AuthRepo = {
   },
 
   async requestOtp(email) {
-    // shouldCreateUser: false means only pre-approved accounts (created via
-    // the Supabase dashboard, see README) can ever request a code — random
-    // emails get a clear error instead of silently creating an account and
-    // triggering the "confirm signup" email flow.
-    const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } });
+    // Anyone can request a code and get an auth.users row now — real access
+    // is gated by whether a `staff` row exists for them (see getStaff),
+    // which only a restaurant owner can create (directly, or by inviting
+    // an email that redeems automatically on next login).
+    const { error } = await supabase.auth.signInWithOtp({ email });
     if (error) throw error;
   },
 
@@ -50,9 +50,13 @@ export const authRepo: AuthRepo = {
     const userId = sessionData.session?.user.id;
     if (!userId) return null;
 
+    // Redeem any pending invite for this email before checking staff —
+    // no-ops if none exists. See supabase/migrations/0009_multi_tenant.sql.
+    await supabase.rpc("redeem_staff_invite");
+
     const { data, error } = await supabase
       .from("staff")
-      .select("id, email, role, active")
+      .select("id, restaurant_id, email, role, active")
       .eq("id", userId)
       .maybeSingle();
     if (error) throw error;
@@ -60,10 +64,21 @@ export const authRepo: AuthRepo = {
 
     const staff: Staff = {
       id: data.id,
+      restaurantId: data.restaurant_id,
       email: data.email,
       role: data.role as StaffRole,
       active: data.active,
     };
     return staff;
+  },
+
+  async isSuperAdmin() {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const userId = sessionData.session?.user.id;
+    if (!userId) return false;
+
+    const { data, error } = await supabase.from("super_admins").select("id").eq("id", userId).maybeSingle();
+    if (error) throw error;
+    return data !== null;
   },
 };

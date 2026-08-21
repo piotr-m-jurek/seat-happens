@@ -2,13 +2,21 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAtomValue } from "@effect/atom-react";
 import type { Table } from "@sit-happens/shared";
-import { reservationsAtom, selectedDateAtom } from "../atoms";
+import { reservationsAtom, reservationsKey, selectedDateAtom } from "../atoms";
 import { useCollection } from "../atoms/collection";
 import { reservationsForTable } from "../lib/reservations";
 
-export function TableNode({ table, onClick }: { table: Table; onClick: () => void }) {
+export function TableNode({
+  restaurantId,
+  table,
+  onClick,
+}: {
+  restaurantId: number;
+  table: Table;
+  onClick: () => void;
+}) {
   const selectedDate = useAtomValue(selectedDateAtom);
-  const reservations = useCollection(reservationsAtom(selectedDate));
+  const reservations = useCollection(reservationsAtom(reservationsKey(restaurantId, selectedDate)));
   const bookings = reservationsForTable(reservations, table.id);
 
   return (

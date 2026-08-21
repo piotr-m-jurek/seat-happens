@@ -6,14 +6,22 @@ function toObstacle(row: any): Obstacle {
 }
 
 export const obstaclesRepo: ObstaclesRepo = {
-  async list() {
-    const { data, error } = await supabase.from("obstacles").select("*").order("id");
+  async list(restaurantId) {
+    const { data, error } = await supabase
+      .from("obstacles")
+      .select("*")
+      .eq("restaurant_id", restaurantId)
+      .order("id");
     if (error) throw error;
     return data.map(toObstacle);
   },
 
-  async create(obstacle: NewObstacle) {
-    const { data, error } = await supabase.from("obstacles").insert(obstacle).select().single();
+  async create(restaurantId, obstacle: NewObstacle) {
+    const { data, error } = await supabase
+      .from("obstacles")
+      .insert({ ...obstacle, restaurant_id: restaurantId })
+      .select()
+      .single();
     if (error) throw error;
     return toObstacle(data);
   },
@@ -34,12 +42,16 @@ export const obstaclesRepo: ObstaclesRepo = {
     if (error) throw error;
   },
 
-  subscribe(cb) {
+  subscribe(restaurantId, cb) {
     const channel = supabase
-      .channel("obstacles-changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "obstacles" }, () => {
-        this.list().then(cb).catch(console.error);
-      })
+      .channel(`obstacles-changes-${restaurantId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "obstacles", filter: `restaurant_id=eq.${restaurantId}` },
+        () => {
+          this.list(restaurantId).then(cb).catch(console.error);
+        }
+      )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);

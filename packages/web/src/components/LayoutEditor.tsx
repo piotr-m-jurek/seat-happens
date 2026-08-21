@@ -216,10 +216,10 @@ type Editing =
 
 const MIN_ROOM_UNITS = 1.5;
 
-export function LayoutEditor() {
-  const tables = useCollection(tablesAtom);
-  const obstacles = useCollection(obstaclesAtom);
-  const floorPlan = useAsyncValue(floorPlanAtom, { width: 4, height: 3 });
+export function LayoutEditor({ restaurantId }: { restaurantId: number }) {
+  const tables = useCollection(tablesAtom(restaurantId));
+  const obstacles = useCollection(obstaclesAtom(restaurantId));
+  const floorPlan = useAsyncValue(floorPlanAtom(restaurantId), { width: 4, height: 3 });
   const canvasRef = useRef<HTMLDivElement>(null);
   const [editing, setEditing] = useState<Editing>(null);
 
@@ -256,7 +256,7 @@ export function LayoutEditor() {
     e.stopPropagation();
     if (!resizingRoom.current) return;
     resizingRoom.current = false;
-    await floorPlanRepo.update(liveSize);
+    await floorPlanRepo.update(restaurantId, liveSize);
   }
 
   return (
@@ -300,8 +300,12 @@ export function LayoutEditor() {
         />
       </div>
 
-      {editing?.kind === "table" && <TableEditModal value={editing.value} onClose={() => setEditing(null)} />}
-      {editing?.kind === "obstacle" && <ObstacleEditModal value={editing.value} onClose={() => setEditing(null)} />}
+      {editing?.kind === "table" && (
+        <TableEditModal restaurantId={restaurantId} value={editing.value} onClose={() => setEditing(null)} />
+      )}
+      {editing?.kind === "obstacle" && (
+        <ObstacleEditModal restaurantId={restaurantId} value={editing.value} onClose={() => setEditing(null)} />
+      )}
     </div>
   );
 }
@@ -316,8 +320,16 @@ function nextDuplicateName(existingNames: string[], sourceName: string): string 
   return count === 0 ? `${base} copy` : `${base} copy ${count + 1}`;
 }
 
-function TableEditModal({ value, onClose }: { value: Table | null; onClose: () => void }) {
-  const tables = useCollection(tablesAtom);
+function TableEditModal({
+  restaurantId,
+  value,
+  onClose,
+}: {
+  restaurantId: number;
+  value: Table | null;
+  onClose: () => void;
+}) {
+  const tables = useCollection(tablesAtom(restaurantId));
   const [name, setName] = useState(value?.name ?? "");
   const [seats, setSeats] = useState(value?.seats ?? 2);
   const [error, setError] = useState<string | null>(null);
@@ -331,7 +343,7 @@ function TableEditModal({ value, onClose }: { value: Table | null; onClose: () =
       if (value) {
         await tablesRepo.update(value.id, { name, seats });
       } else {
-        await tablesRepo.create({ name, seats, x: 0.5, y: 0.5, width: 0.18, height: 0.2 });
+        await tablesRepo.create(restaurantId, { name, seats, x: 0.5, y: 0.5, width: 0.18, height: 0.2 });
       }
       onClose();
     } catch (err) {
@@ -345,7 +357,7 @@ function TableEditModal({ value, onClose }: { value: Table | null; onClose: () =
     setBusy(true);
     setError(null);
     try {
-      await tablesRepo.create({
+      await tablesRepo.create(restaurantId, {
         name: nextDuplicateName(
           tables.map((t) => t.name),
           value.name
@@ -423,7 +435,15 @@ function TableEditModal({ value, onClose }: { value: Table | null; onClose: () =
   );
 }
 
-function ObstacleEditModal({ value, onClose }: { value: Obstacle | null; onClose: () => void }) {
+function ObstacleEditModal({
+  restaurantId,
+  value,
+  onClose,
+}: {
+  restaurantId: number;
+  value: Obstacle | null;
+  onClose: () => void;
+}) {
   const [label, setLabel] = useState(value?.label ?? "");
   const [widthPct, setWidthPct] = useState(Math.round((value?.width ?? 0.2) * 100));
   const [heightPct, setHeightPct] = useState(Math.round((value?.height ?? 0.2) * 100));
@@ -440,7 +460,7 @@ function ObstacleEditModal({ value, onClose }: { value: Obstacle | null; onClose
       if (value) {
         await obstaclesRepo.update(value.id, { label, width, height });
       } else {
-        await obstaclesRepo.create({ label, width, height, x: 0.5, y: 0.5 });
+        await obstaclesRepo.create(restaurantId, { label, width, height, x: 0.5, y: 0.5 });
       }
       onClose();
     } catch (err) {

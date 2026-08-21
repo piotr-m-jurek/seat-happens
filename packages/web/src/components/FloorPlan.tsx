@@ -4,10 +4,10 @@ import { useAsyncValue, useCollection } from "../atoms/collection";
 import { floorPlanCanvasStyle } from "../lib/reservations";
 import { TableNode } from "./TableNode";
 
-export function FloorPlan() {
-  const tables = useCollection(tablesAtom);
-  const obstacles = useCollection(obstaclesAtom);
-  const floorPlan = useAsyncValue(floorPlanAtom, { width: 4, height: 3 });
+export function FloorPlan({ restaurantId }: { restaurantId: number }) {
+  const tables = useCollection(tablesAtom(restaurantId));
+  const obstacles = useCollection(obstaclesAtom(restaurantId));
+  const floorPlan = useAsyncValue(floorPlanAtom(restaurantId), { width: 4, height: 3 });
   const [, setSelectedTableId] = useAtom(selectedTableIdAtom);
 
   if (tables.length === 0) {
@@ -35,7 +35,12 @@ export function FloorPlan() {
         </div>
       ))}
       {tables.map((table) => (
-        <TableNode key={table.id} table={table} onClick={() => setSelectedTableId(table.id)} />
+        <TableNode
+          key={table.id}
+          restaurantId={restaurantId}
+          table={table}
+          onClick={() => setSelectedTableId(table.id)}
+        />
       ))}
     </div>
   );

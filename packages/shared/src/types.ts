@@ -1,10 +1,24 @@
 export type StaffRole = "owner" | "staff" | "viewer";
 
+export interface Restaurant {
+  id: number;
+  slug: string;
+  name: string;
+}
+
 export interface Staff {
   id: string;
+  restaurantId: number;
   email: string;
   role: StaffRole;
   active: boolean;
+}
+
+export interface StaffInvite {
+  id: number;
+  restaurantId: number;
+  email: string;
+  role: StaffRole;
 }
 
 export interface Table {
@@ -45,3 +59,4 @@ export interface FloorPlanSize {
 export type NewTable = Omit<Table, "id">;
 export type NewReservation = Omit<Reservation, "id">;
 export type NewObstacle = Omit<Obstacle, "id">;
+export type NewRestaurant = Omit<Restaurant, "id">;

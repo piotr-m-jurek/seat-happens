@@ -1,29 +1,67 @@
-import type { Session, Staff, Table } from "@sit-happens/shared";
+import type { Session, Staff } from "@sit-happens/shared";
+import { Effect } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { authRepo } from "../data/authRepo";
 import { floorPlanRepo } from "../data/floorPlanRepo";
 import { obstaclesRepo } from "../data/obstaclesRepo";
 import { reservationsRepo } from "../data/reservationsRepo";
+import { restaurantsRepo } from "../data/restaurantsRepo";
+import { staffRepo } from "../data/staffRepo";
 import { tablesRepo } from "../data/tablesRepo";
 import { todayISO } from "../lib/reservations";
 import { collectionAtom, pushAtom } from "./collection";
 
-export const tablesAtom = collectionAtom<Table>(tablesRepo);
-export const obstaclesAtom = collectionAtom(obstaclesRepo);
-export const floorPlanAtom = pushAtom(
-  () => floorPlanRepo.get(),
-  (cb) => floorPlanRepo.subscribe(cb)
+// Every restaurant-scoped collection is a family keyed by restaurantId, so
+// switching restaurants reuses an atom already seen this session and each
+// restaurant's realtime subscription lives independently of the others —
+// same pattern reservationsAtom already used for dates, one level up.
+export const tablesAtom = Atom.family((restaurantId: number) =>
+  collectionAtom({
+    list: () => tablesRepo.list(restaurantId),
+    subscribe: (cb: Parameters<typeof tablesRepo.subscribe>[1]) => tablesRepo.subscribe(restaurantId, cb),
+  })
 );
 
-// One atom per date, memoized — switching dates reuses the atom if you
-// come back to a date already seen this session, and each holds its own
-// realtime subscription independent of the others.
-export const reservationsAtom = Atom.family((date: string) =>
+export const obstaclesAtom = Atom.family((restaurantId: number) =>
   collectionAtom({
-    list: () => reservationsRepo.listByDate(date),
-    subscribe: (cb: (items: Awaited<ReturnType<typeof reservationsRepo.listByDate>>) => void) =>
-      reservationsRepo.subscribeByDate(date, cb),
+    list: () => obstaclesRepo.list(restaurantId),
+    subscribe: (cb: Parameters<typeof obstaclesRepo.subscribe>[1]) => obstaclesRepo.subscribe(restaurantId, cb),
   })
+);
+
+export const floorPlanAtom = Atom.family((restaurantId: number) =>
+  pushAtom(
+    () => floorPlanRepo.get(restaurantId),
+    (cb) => floorPlanRepo.subscribe(restaurantId, cb)
+  )
+);
+
+export function reservationsKey(restaurantId: number, date: string): string {
+  return `${restaurantId}:${date}`;
+}
+
+export const reservationsAtom = Atom.family((key: string) => {
+  const [restaurantId, date] = key.split(":");
+  const id = Number(restaurantId);
+  return collectionAtom({
+    list: () => reservationsRepo.listByDate(id, date),
+    subscribe: (cb: Parameters<typeof reservationsRepo.subscribeByDate>[2]) =>
+      reservationsRepo.subscribeByDate(id, date, cb),
+  });
+});
+
+// One-shot lookups (no realtime) — a restaurant's own slug/name rarely
+// changes, and the restaurant list is only read from the admin page, which
+// re-triggers with useAtomRefresh after creating one.
+export const restaurantAtom = Atom.family((slug: string) => Atom.make(Effect.tryPromise(() => restaurantsRepo.getBySlug(slug))));
+export const restaurantByIdAtom = Atom.family((id: number) => Atom.make(Effect.tryPromise(() => restaurantsRepo.getById(id))));
+export const restaurantsListAtom = Atom.make(Effect.tryPromise(() => restaurantsRepo.list()));
+
+export const staffListAtom = Atom.family((restaurantId: number) =>
+  Atom.make(Effect.tryPromise(() => staffRepo.listForRestaurant(restaurantId)))
+);
+export const staffInvitesAtom = Atom.family((restaurantId: number) =>
+  Atom.make(Effect.tryPromise(() => staffRepo.listInvitesForRestaurant(restaurantId)))
 );
 
 export const sessionAtom = pushAtom<Session | null>(
@@ -39,6 +77,11 @@ export const staffAtom = pushAtom<Staff | null>(
   (cb) => authRepo.onSessionChange((s) => (s ? authRepo.getStaff().then(cb) : cb(null)))
 );
 
+export const isSuperAdminAtom = pushAtom<boolean>(
+  () => authRepo.getSession().then((s) => (s ? authRepo.isSuperAdmin() : false)),
+  (cb) => authRepo.onSessionChange((s) => (s ? authRepo.isSuperAdmin().then(cb) : cb(false)))
+);
+
 export const selectedDateAtom = Atom.make(todayISO());
 export const selectedTableIdAtom = Atom.make<number | null>(null);
-export const viewAtom = Atom.make<"floor" | "agenda" | "layout">("floor");
+export const viewAtom = Atom.make<"floor" | "agenda" | "layout" | "staff">("floor");

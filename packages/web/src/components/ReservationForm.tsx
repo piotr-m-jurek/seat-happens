@@ -7,16 +7,24 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAtomValue } from "@effect/atom-react";
 import type { NewReservation } from "@sit-happens/shared";
 import { useMemo, useState, type FormEvent } from "react";
-import { reservationsAtom, selectedDateAtom, tablesAtom } from "../atoms";
+import { reservationsAtom, reservationsKey, selectedDateAtom, tablesAtom } from "../atoms";
 import { useCollection } from "../atoms/collection";
 import { reservationsRepo } from "../data/reservationsRepo";
 import { addMinutes, defaultReservationTime, formatTime, overlappingReservations, tableNamesLabel } from "../lib/reservations";
 import type { ReservationDraft } from "./AppShell";
 
-export function ReservationForm({ draft, onClose }: { draft: ReservationDraft; onClose: () => void }) {
-  const tables = useCollection(tablesAtom);
+export function ReservationForm({
+  restaurantId,
+  draft,
+  onClose,
+}: {
+  restaurantId: number;
+  draft: ReservationDraft;
+  onClose: () => void;
+}) {
+  const tables = useCollection(tablesAtom(restaurantId));
   const selectedDate = useAtomValue(selectedDateAtom);
-  const reservations = useCollection(reservationsAtom(selectedDate));
+  const reservations = useCollection(reservationsAtom(reservationsKey(restaurantId, selectedDate)));
 
   const existing = useMemo(
     () => (draft.id ? (reservations.find((r) => r.id === draft.id) ?? null) : null),
@@ -63,7 +71,7 @@ export function ReservationForm({ draft, onClose }: { draft: ReservationDraft; o
       if (existing) {
         await reservationsRepo.update(existing.id, payload);
       } else {
-        await reservationsRepo.create(payload);
+        await reservationsRepo.create(restaurantId, payload);
       }
       onClose();
     } catch (err) {
