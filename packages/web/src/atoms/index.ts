@@ -9,6 +9,8 @@ import { restaurantsRepo } from "../data/restaurantsRepo";
 import { staffRepo } from "../data/staffRepo";
 import { tablesRepo } from "../data/tablesRepo";
 import { todayISO } from "../lib/reservations";
+import { getSearchParam } from "../lib/router";
+import { initialTheme, type Theme } from "../lib/theme";
 import { collectionAtom, pushAtom } from "./collection";
 
 // Every restaurant-scoped collection is a family keyed by restaurantId, so
@@ -89,6 +91,16 @@ export const isSuperAdminAtom = pushAtom<boolean>(
   (cb) => authRepo.onSessionChange((s) => (s ? authRepo.isSuperAdmin().then(cb) : cb(false))),
 );
 
-export const selectedDateAtom = Atom.make(todayISO());
+// Seeded from ?date= if present in the URL on load (so a shared/reloaded
+// link lands on the right day), otherwise today. Going forward the URL is
+// kept in sync with this atom, not the other way — see the effect in
+// AppShell.tsx.
+function initialSelectedDate(): string {
+  const param = getSearchParam("date");
+  return param && /^\d{4}-\d{2}-\d{2}$/.test(param) ? param : todayISO();
+}
+
+export const selectedDateAtom = Atom.make(initialSelectedDate());
 export const selectedTableIdAtom = Atom.make<number | null>(null);
 export const viewAtom = Atom.make<"floor" | "agenda" | "layout" | "staff">("floor");
+export const themeAtom = Atom.make<Theme>(initialTheme());

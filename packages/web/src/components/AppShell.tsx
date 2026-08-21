@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -10,17 +9,20 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAtom } from "@effect/atom-react";
 import type { Restaurant, Staff } from "@sit-happens/shared";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { restaurantByIdAtom, selectedDateAtom, selectedTableIdAtom, viewAtom } from "../atoms";
 import { useAsyncValue } from "../atoms/collection";
 import { authRepo } from "../data/authRepo";
-import { navigate } from "../lib/router";
+import { todayISO } from "../lib/reservations";
+import { navigate, setSearchParam } from "../lib/router";
 import { AgendaList } from "./AgendaList";
+import { DatePicker } from "./DatePicker";
 import { FloorPlan } from "./FloorPlan";
 import { LayoutEditor } from "./LayoutEditor";
 import { ReservationForm } from "./ReservationForm";
 import { StaffTab } from "./StaffTab";
 import { TableDetailPanel } from "./TableDetailPanel";
+import { ThemeToggle } from "./ThemeToggle";
 
 export interface ReservationDraft {
   id?: number;
@@ -72,6 +74,14 @@ export function AppShell({
   const canWrite = staff.role !== "viewer";
   const isOwner = staff.role === "owner";
 
+  // Keeps the URL in sync with the selected date — present as ?date=
+  // when it's not today, absent (and normalized away) when it is. The
+  // atom's initial value is seeded from this same param at module init
+  // (see atoms/index.ts), so this only ever needs to go one direction.
+  useEffect(() => {
+    setSearchParam("date", selectedDate === todayISO() ? null : selectedDate);
+  }, [selectedDate]);
+
   async function signOut() {
     await authRepo.signOut();
     setSelectedTableId(null);
@@ -86,12 +96,7 @@ export function AppShell({
         ) : (
           <h1 className="whitespace-nowrap text-lg font-semibold">{restaurant.name}</h1>
         )}
-        <Input
-          type="date"
-          className="w-auto"
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-        />
+        <DatePicker value={selectedDate} onChange={setSelectedDate} />
         <Tabs
           value={view}
           onValueChange={(v) => setView(v as "floor" | "agenda" | "layout" | "staff")}
@@ -104,6 +109,7 @@ export function AppShell({
           </TabsList>
         </Tabs>
         <div className="flex-1" />
+        <ThemeToggle />
         <span className="text-sm text-muted-foreground">{staff.email}</span>
         <Button variant="ghost" onClick={signOut}>
           Sign out

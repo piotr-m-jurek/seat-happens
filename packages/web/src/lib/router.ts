@@ -23,8 +23,12 @@ function subscribe(listener: () => void) {
   };
 }
 
-function getSnapshot() {
+function getPathSnapshot() {
   return window.location.pathname;
+}
+
+function getSearchSnapshot() {
+  return window.location.search;
 }
 
 export function navigate(path: string) {
@@ -34,6 +38,32 @@ export function navigate(path: string) {
 }
 
 export function useRoute(): Route {
-  const pathname = useSyncExternalStore(subscribe, getSnapshot);
+  const pathname = useSyncExternalStore(subscribe, getPathSnapshot);
   return parseRoute(pathname);
+}
+
+// One-shot read, for seeding initial state at module/atom init time —
+// before React (and useSearchParam below) is even running yet.
+export function getSearchParam(name: string): string | null {
+  return new URLSearchParams(window.location.search).get(name);
+}
+
+export function useSearchParam(name: string): string | null {
+  const search = useSyncExternalStore(subscribe, getSearchSnapshot);
+  return new URLSearchParams(search).get(name);
+}
+
+// Query params represent view state (which date you're looking at), not a
+// navigation you'd want undone with the back button, so this replaces
+// rather than pushes.
+export function setSearchParam(name: string, value: string | null) {
+  const params = new URLSearchParams(window.location.search);
+  if (value === null) {
+    params.delete(name);
+  } else {
+    params.set(name, value);
+  }
+  const search = params.toString();
+  window.history.replaceState(null, "", window.location.pathname + (search ? `?${search}` : ""));
+  listeners.forEach((l) => l());
 }
