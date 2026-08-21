@@ -45,23 +45,25 @@ export function ReservationForm({
 
   const [tableIds, setTableIds] = useState(existing?.tableIds ?? draft.tableIds);
   const [guestName, setGuestName] = useState(existing?.guestName ?? "");
-  const [partySize, setPartySize] = useState(existing?.partySize ?? 2);
+  // Kept as raw text (not a number) so the field can be cleared while
+  // editing instead of snapping to 0 — parsed back to a number on save.
+  const [partySize, setPartySize] = useState(String(existing?.partySize ?? 2));
   const [date, setDate] = useState(existing?.date ?? selectedDate);
   const [startTime, setStartTime] = useState(existing?.startTime ?? defaultReservationTime());
-  const [durationMin, setDurationMin] = useState(existing?.durationMin ?? 90);
+  const [durationMin, setDurationMin] = useState(String(existing?.durationMin ?? 90));
   const [notes, setNotes] = useState(existing?.notes ?? "");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const selectedTables = tables.filter((t) => tableIds.includes(t.id));
   const totalSeats = selectedTables.reduce((sum, t) => sum + t.seats, 0);
-  const overCapacity = selectedTables.length > 0 && partySize > totalSeats;
+  const overCapacity = selectedTables.length > 0 && Number(partySize) > totalSeats;
   const conflicts = overlappingReservations(
     reservations,
     tableIds,
     date,
     startTime,
-    durationMin,
+    Number(durationMin),
     existing?.id,
   );
 
@@ -81,10 +83,10 @@ export function ReservationForm({
       const payload: NewReservation = {
         tableIds,
         guestName,
-        partySize,
+        partySize: Number(partySize),
         date,
         startTime,
-        durationMin,
+        durationMin: Number(durationMin),
         notes: notes || null,
       };
       if (existing) {
@@ -160,7 +162,7 @@ export function ReservationForm({
               type="number"
               min="1"
               value={partySize}
-              onChange={(e) => setPartySize(Number(e.target.value))}
+              onChange={(e) => setPartySize(e.target.value)}
               required
             />
             {overCapacity && (
@@ -200,7 +202,7 @@ export function ReservationForm({
                 min="15"
                 step="15"
                 value={durationMin}
-                onChange={(e) => setDurationMin(Number(e.target.value))}
+                onChange={(e) => setDurationMin(e.target.value)}
                 required
               />
             </div>

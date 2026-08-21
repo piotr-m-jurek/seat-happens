@@ -8,8 +8,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { Obstacle, Table } from "@sit-happens/shared";
+import { cn } from "@/lib/utils";
+import type { FloorPlanSize, Obstacle, Table } from "@sit-happens/shared";
 import {
+  useEffect,
   useRef,
   useState,
   type FormEvent,
@@ -151,14 +153,28 @@ function ResizeHandle({
 
 function LayoutTableNode({
   table,
+  draftRect,
+  isPendingDelete,
   canvasRef,
   onEdit,
+  onChangeDraft,
 }: {
   table: Table;
+  draftRect: Rect | null;
+  isPendingDelete: boolean;
   canvasRef: RefObject<HTMLDivElement | null>;
   onEdit: () => void;
+  onChangeDraft: (rect: Rect) => void;
 }) {
-  const tableRect: Rect = { x: table.x, y: table.y, width: table.width, height: table.height };
+  const tableRect: Rect = draftRect ?? {
+    x: table.x,
+    y: table.y,
+    width: table.width,
+    height: table.height,
+  };
+  // Called unconditionally regardless of isPendingDelete (rules of hooks —
+  // it can flip between renders for the same node) but its drag/resize
+  // handlers are simply left unwired below while pending deletion.
   const {
     rect,
     onPointerDown,
@@ -167,48 +183,56 @@ function LayoutTableNode({
     onResizePointerDown,
     onResizePointerMove,
     onResizePointerUp,
-  } = useDragAndResize(
-    tableRect,
-    canvasRef,
-    (r) => tablesRepo.update(table.id, { x: r.x, y: r.y }),
-    (r) => tablesRepo.update(table.id, r),
-    onEdit,
-  );
+  } = useDragAndResize(tableRect, canvasRef, onChangeDraft, onChangeDraft, onEdit);
+  const displayRect = isPendingDelete ? tableRect : rect;
 
   return (
     <button
-      className="absolute z-10 flex -translate-x-1/2 -translate-y-1/2 cursor-grab touch-none flex-col items-center justify-center gap-0.5 rounded-xl border-2 border-border bg-card shadow-sm"
+      className={cn(
+        "absolute z-10 flex -translate-x-1/2 -translate-y-1/2 touch-none flex-col items-center justify-center gap-0.5 rounded-xl border-2 shadow-sm",
+        isPendingDelete
+          ? "border-destructive bg-destructive/10 opacity-50"
+          : "cursor-grab border-border bg-card",
+      )}
       style={{
-        left: `${rect.x * 100}%`,
-        top: `${rect.y * 100}%`,
-        width: `${rect.width * 100}%`,
-        height: `${rect.height * 100}%`,
+        left: `${displayRect.x * 100}%`,
+        top: `${displayRect.y * 100}%`,
+        width: `${displayRect.width * 100}%`,
+        height: `${displayRect.height * 100}%`,
       }}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
+      onPointerDown={isPendingDelete ? undefined : onPointerDown}
+      onPointerMove={isPendingDelete ? undefined : onPointerMove}
+      onPointerUp={isPendingDelete ? onEdit : onPointerUp}
     >
       <span className="font-semibold">{table.name}</span>
       <span className="text-xs text-muted-foreground">{table.seats} seats</span>
-      <ResizeHandle
-        onPointerDown={onResizePointerDown}
-        onPointerMove={onResizePointerMove}
-        onPointerUp={onResizePointerUp}
-      />
+      {!isPendingDelete && (
+        <ResizeHandle
+          onPointerDown={onResizePointerDown}
+          onPointerMove={onResizePointerMove}
+          onPointerUp={onResizePointerUp}
+        />
+      )}
     </button>
   );
 }
 
 function LayoutObstacleNode({
   obstacle,
+  draftRect,
+  isPendingDelete,
   canvasRef,
   onEdit,
+  onChangeDraft,
 }: {
   obstacle: Obstacle;
+  draftRect: Rect | null;
+  isPendingDelete: boolean;
   canvasRef: RefObject<HTMLDivElement | null>;
   onEdit: () => void;
+  onChangeDraft: (rect: Rect) => void;
 }) {
-  const obstacleRect: Rect = {
+  const obstacleRect: Rect = draftRect ?? {
     x: obstacle.x,
     y: obstacle.y,
     width: obstacle.width,
@@ -222,33 +246,35 @@ function LayoutObstacleNode({
     onResizePointerDown,
     onResizePointerMove,
     onResizePointerUp,
-  } = useDragAndResize(
-    obstacleRect,
-    canvasRef,
-    (r) => obstaclesRepo.update(obstacle.id, { x: r.x, y: r.y }),
-    (r) => obstaclesRepo.update(obstacle.id, r),
-    onEdit,
-  );
+  } = useDragAndResize(obstacleRect, canvasRef, onChangeDraft, onChangeDraft, onEdit);
+  const displayRect = isPendingDelete ? obstacleRect : rect;
 
   return (
     <button
-      className="absolute flex -translate-x-1/2 -translate-y-1/2 cursor-grab touch-none items-center justify-center rounded-md border-2 border-dashed border-muted-foreground/40 bg-muted/60 text-sm text-muted-foreground"
+      className={cn(
+        "absolute flex -translate-x-1/2 -translate-y-1/2 touch-none items-center justify-center rounded-md border-2 border-dashed text-sm",
+        isPendingDelete
+          ? "border-destructive bg-destructive/10 text-destructive opacity-50"
+          : "cursor-grab border-muted-foreground/40 bg-muted/60 text-muted-foreground",
+      )}
       style={{
-        left: `${rect.x * 100}%`,
-        top: `${rect.y * 100}%`,
-        width: `${rect.width * 100}%`,
-        height: `${rect.height * 100}%`,
+        left: `${displayRect.x * 100}%`,
+        top: `${displayRect.y * 100}%`,
+        width: `${displayRect.width * 100}%`,
+        height: `${displayRect.height * 100}%`,
       }}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
+      onPointerDown={isPendingDelete ? undefined : onPointerDown}
+      onPointerMove={isPendingDelete ? undefined : onPointerMove}
+      onPointerUp={isPendingDelete ? onEdit : onPointerUp}
     >
       {obstacle.label}
-      <ResizeHandle
-        onPointerDown={onResizePointerDown}
-        onPointerMove={onResizePointerMove}
-        onPointerUp={onResizePointerUp}
-      />
+      {!isPendingDelete && (
+        <ResizeHandle
+          onPointerDown={onResizePointerDown}
+          onPointerMove={onResizePointerMove}
+          onPointerUp={onResizePointerUp}
+        />
+      )}
     </button>
   );
 }
@@ -260,6 +286,83 @@ type Editing =
 
 const MIN_ROOM_UNITS = 1.5;
 
+// x/y/width/height are Postgres `real` (32-bit float) columns, so a value
+// written as a 64-bit JS double comes back from the server rounded to
+// float4 precision — comparing with === would never match, leaving the
+// draft stuck as "unsaved" forever. This tolerance is far looser than
+// float4 rounding error (~1e-7 for values in this range) but still far
+// tighter than a meaningful drag/resize movement.
+const SYNCED_EPSILON = 1e-4;
+
+function closeEnough(a: number, b: number): boolean {
+  return Math.abs(a - b) < SYNCED_EPSILON;
+}
+
+function sameRect(a: Rect, b: Rect): boolean {
+  return (
+    closeEnough(a.x, b.x) &&
+    closeEnough(a.y, b.y) &&
+    closeEnough(a.width, b.width) &&
+    closeEnough(a.height, b.height)
+  );
+}
+
+function sameSize(a: FloorPlanSize, b: FloorPlanSize): boolean {
+  return closeEnough(a.width, b.width) && closeEnough(a.height, b.height);
+}
+
+// Drops a draft entry once the server-driven value has caught up to it —
+// not on save itself, since the realtime echo of our own write can lag
+// behind the write's own response and would otherwise flash the shape
+// back to its pre-save position for a moment.
+function useDraftSync<T extends { id: number }>(
+  items: T[],
+  toRect: (item: T) => Rect,
+  setDraft: (updater: (d: Record<number, Rect>) => Record<number, Rect>) => void,
+) {
+  useEffect(() => {
+    setDraft((draft) => {
+      let next: Record<number, Rect> | null = null;
+      for (const item of items) {
+        const pending = draft[item.id];
+        if (pending && sameRect(pending, toRect(item))) {
+          next ??= { ...draft };
+          delete next[item.id];
+        }
+      }
+      return next ?? draft;
+    });
+  }, [items, toRect, setDraft]);
+}
+
+// Drops a pending-delete id once it's no longer in the server-driven list
+// — same reasoning as useDraftSync: don't clear it right on save, since
+// the realtime echo of our own delete can lag behind the delete's own
+// response and would otherwise flash the shape back for a moment.
+function useDeleteDraftSync(
+  items: { id: number }[],
+  setDeleted: (updater: (d: Record<number, true>) => Record<number, true>) => void,
+) {
+  useEffect(() => {
+    setDeleted((deleted) => {
+      const currentIds = new Set(items.map((item) => item.id));
+      let changed = false;
+      const next: Record<number, true> = {};
+      for (const idStr of Object.keys(deleted)) {
+        const id = Number(idStr);
+        // Still present server-side: the delete hasn't landed yet, keep it
+        // pending. Gone from the list: the delete is confirmed, drop it.
+        if (currentIds.has(id)) {
+          next[id] = true;
+        } else {
+          changed = true;
+        }
+      }
+      return changed ? next : deleted;
+    });
+  }, [items, setDeleted]);
+}
+
 export function LayoutEditor({ restaurantId }: { restaurantId: number }) {
   const tables = useCollection(tablesAtom(restaurantId));
   const obstacles = useCollection(obstaclesAtom(restaurantId));
@@ -267,12 +370,50 @@ export function LayoutEditor({ restaurantId }: { restaurantId: number }) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [editing, setEditing] = useState<Editing>(null);
 
+  // Dragging/resizing only ever touches this local draft — nothing is
+  // persisted until "Save layout" is clicked. Otherwise every gesture hits
+  // the DB immediately, and the realtime echo of our own write can arrive
+  // out of order with a stale in-flight refetch, visibly snapping the
+  // shape back before jumping to its real position.
+  const [draftTables, setDraftTables] = useState<Record<number, Rect>>({});
+  const [draftObstacles, setDraftObstacles] = useState<Record<number, Rect>>({});
+  const [draftRoomSize, setDraftRoomSize] = useState<FloorPlanSize | null>(null);
+  // Deletion is a draft too — marking a table/obstacle for deletion only
+  // flags it here; the actual remove() call happens in saveLayout().
+  const [draftDeletedTables, setDraftDeletedTables] = useState<Record<number, true>>({});
+  const [draftDeletedObstacles, setDraftDeletedObstacles] = useState<Record<number, true>>({});
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const isDirty =
+    Object.keys(draftTables).length > 0 ||
+    Object.keys(draftObstacles).length > 0 ||
+    Object.keys(draftDeletedTables).length > 0 ||
+    Object.keys(draftDeletedObstacles).length > 0 ||
+    draftRoomSize !== null;
+
+  useDraftSync(
+    tables,
+    (t) => ({ x: t.x, y: t.y, width: t.width, height: t.height }),
+    setDraftTables,
+  );
+  useDraftSync(
+    obstacles,
+    (o) => ({ x: o.x, y: o.y, width: o.width, height: o.height }),
+    setDraftObstacles,
+  );
+  useDeleteDraftSync(tables, setDraftDeletedTables);
+  useDeleteDraftSync(obstacles, setDraftDeletedObstacles);
+  useEffect(() => {
+    setDraftRoomSize((size) => (size && sameSize(size, floorPlan) ? null : size));
+  }, [floorPlan]);
+
   const [liveSize, setLiveSize] = useState(floorPlan);
   const resizingRoom = useRef(false);
   const roomStart = useRef({ x: 0, y: 0 });
   const roomStartSize = useRef(floorPlan);
   const pxPerUnit = useRef({ x: 1, y: 1 });
-  const displaySize = resizingRoom.current ? liveSize : floorPlan;
+  const roomSize = draftRoomSize ?? floorPlan;
+  const displaySize = resizingRoom.current ? liveSize : roomSize;
 
   function onRoomResizePointerDown(e: ReactPointerEvent<HTMLDivElement>) {
     e.stopPropagation();
@@ -282,9 +423,9 @@ export function LayoutEditor({ restaurantId }: { restaurantId: number }) {
     const box = canvas.getBoundingClientRect();
     resizingRoom.current = true;
     roomStart.current = { x: e.clientX, y: e.clientY };
-    roomStartSize.current = floorPlan;
-    pxPerUnit.current = { x: box.width / floorPlan.width, y: box.height / floorPlan.height };
-    setLiveSize(floorPlan);
+    roomStartSize.current = roomSize;
+    pxPerUnit.current = { x: box.width / roomSize.width, y: box.height / roomSize.height };
+    setLiveSize(roomSize);
   }
 
   function onRoomResizePointerMove(e: ReactPointerEvent<HTMLDivElement>) {
@@ -299,18 +440,56 @@ export function LayoutEditor({ restaurantId }: { restaurantId: number }) {
     setLiveSize({ width, height });
   }
 
-  async function onRoomResizePointerUp(e: ReactPointerEvent<HTMLDivElement>) {
+  function onRoomResizePointerUp(e: ReactPointerEvent<HTMLDivElement>) {
     e.stopPropagation();
     if (!resizingRoom.current) return;
     resizingRoom.current = false;
-    await floorPlanRepo.update(restaurantId, liveSize);
+    setDraftRoomSize(liveSize);
+  }
+
+  async function saveLayout() {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await Promise.all([
+        // Skip position/size updates for anything also marked for deletion
+        // — it's about to be removed, moving it first is pointless.
+        ...Object.entries(draftTables)
+          .filter(([id]) => !(Number(id) in draftDeletedTables))
+          .map(([id, rect]) => tablesRepo.update(Number(id), rect)),
+        ...Object.entries(draftObstacles)
+          .filter(([id]) => !(Number(id) in draftDeletedObstacles))
+          .map(([id, rect]) => obstaclesRepo.update(Number(id), rect)),
+        ...Object.keys(draftDeletedTables).map((id) => tablesRepo.remove(Number(id))),
+        ...Object.keys(draftDeletedObstacles).map((id) => obstaclesRepo.remove(Number(id))),
+        ...(draftRoomSize ? [floorPlanRepo.update(restaurantId, draftRoomSize)] : []),
+      ]);
+      // Draft entries are cleared by useDraftSync/useDeleteDraftSync once
+      // each one's server value catches up, not here — see the comments
+      // above them.
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : "Could not save layout.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">Floor layout</h2>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-3">
+          {saveError && <span className="text-sm text-destructive">{saveError}</span>}
+          {saving ? (
+            <span className="text-sm text-muted-foreground">Saving…</span>
+          ) : (
+            isDirty && <span className="text-sm text-muted-foreground">Unsaved changes</span>
+          )}
+          {isDirty && (
+            <Button onClick={saveLayout} disabled={saving}>
+              {saving ? "Saving…" : "Save layout"}
+            </Button>
+          )}
           <Button variant="outline" onClick={() => setEditing({ kind: "obstacle", value: null })}>
             + Add obstacle
           </Button>
@@ -327,16 +506,22 @@ export function LayoutEditor({ restaurantId }: { restaurantId: number }) {
           <LayoutObstacleNode
             key={obstacle.id}
             obstacle={obstacle}
+            draftRect={draftObstacles[obstacle.id] ?? null}
+            isPendingDelete={obstacle.id in draftDeletedObstacles}
             canvasRef={canvasRef}
             onEdit={() => setEditing({ kind: "obstacle", value: obstacle })}
+            onChangeDraft={(rect) => setDraftObstacles((d) => ({ ...d, [obstacle.id]: rect }))}
           />
         ))}
         {tables.map((table) => (
           <LayoutTableNode
             key={table.id}
             table={table}
+            draftRect={draftTables[table.id] ?? null}
+            isPendingDelete={table.id in draftDeletedTables}
             canvasRef={canvasRef}
             onEdit={() => setEditing({ kind: "table", value: table })}
+            onChangeDraft={(rect) => setDraftTables((d) => ({ ...d, [table.id]: rect }))}
           />
         ))}
         <div
@@ -351,6 +536,21 @@ export function LayoutEditor({ restaurantId }: { restaurantId: number }) {
         <TableEditModal
           restaurantId={restaurantId}
           value={editing.value}
+          isPendingDelete={editing.value !== null && editing.value.id in draftDeletedTables}
+          onMarkDelete={() => {
+            if (!editing.value) return;
+            const id = editing.value.id;
+            setDraftDeletedTables((d) => ({ ...d, [id]: true }));
+          }}
+          onUndoDelete={() => {
+            if (!editing.value) return;
+            const id = editing.value.id;
+            setDraftDeletedTables((d) => {
+              const next = { ...d };
+              delete next[id];
+              return next;
+            });
+          }}
           onClose={() => setEditing(null)}
         />
       )}
@@ -358,6 +558,21 @@ export function LayoutEditor({ restaurantId }: { restaurantId: number }) {
         <ObstacleEditModal
           restaurantId={restaurantId}
           value={editing.value}
+          isPendingDelete={editing.value !== null && editing.value.id in draftDeletedObstacles}
+          onMarkDelete={() => {
+            if (!editing.value) return;
+            const id = editing.value.id;
+            setDraftDeletedObstacles((d) => ({ ...d, [id]: true }));
+          }}
+          onUndoDelete={() => {
+            if (!editing.value) return;
+            const id = editing.value.id;
+            setDraftDeletedObstacles((d) => {
+              const next = { ...d };
+              delete next[id];
+              return next;
+            });
+          }}
           onClose={() => setEditing(null)}
         />
       )}
@@ -378,15 +593,23 @@ function nextDuplicateName(existingNames: string[], sourceName: string): string 
 function TableEditModal({
   restaurantId,
   value,
+  isPendingDelete,
+  onMarkDelete,
+  onUndoDelete,
   onClose,
 }: {
   restaurantId: number;
   value: Table | null;
+  isPendingDelete: boolean;
+  onMarkDelete: () => void;
+  onUndoDelete: () => void;
   onClose: () => void;
 }) {
   const tables = useCollection(tablesAtom(restaurantId));
   const [name, setName] = useState(value?.name ?? "");
-  const [seats, setSeats] = useState(value?.seats ?? 2);
+  // Raw text, not a number — so the field can be cleared while editing
+  // instead of snapping to 0 — parsed back to a number on save.
+  const [seats, setSeats] = useState(String(value?.seats ?? 2));
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -396,11 +619,11 @@ function TableEditModal({
     setError(null);
     try {
       if (value) {
-        await tablesRepo.update(value.id, { name, seats });
+        await tablesRepo.update(value.id, { name, seats: Number(seats) });
       } else {
         await tablesRepo.create(restaurantId, {
           name,
-          seats,
+          seats: Number(seats),
           x: 0.5,
           y: 0.5,
           width: 0.18,
@@ -437,61 +660,76 @@ function TableEditModal({
     }
   }
 
-  async function remove() {
-    if (!value || !confirm(`Delete ${value.name}? This also removes its reservations.`)) return;
-    setBusy(true);
-    try {
-      await tablesRepo.remove(value.id);
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not delete table.");
-      setBusy(false);
-    }
+  function markDelete() {
+    onMarkDelete();
+    onClose();
+  }
+
+  function undoDelete() {
+    onUndoDelete();
+    onClose();
   }
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
-        <form onSubmit={save} className="space-y-4">
-          <DialogHeader>
-            <DialogTitle>{value ? "Edit table" : "New table"}</DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
-            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
+        {isPendingDelete && value ? (
+          <div className="space-y-4">
+            <DialogHeader>
+              <DialogTitle>{value.name} will be deleted</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              This table — and its reservations — will be permanently deleted when you save the
+              layout.
+            </p>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={undoDelete}>
+                Restore
+              </Button>
+            </DialogFooter>
           </div>
+        ) : (
+          <form onSubmit={save} className="space-y-4">
+            <DialogHeader>
+              <DialogTitle>{value ? "Edit table" : "New table"}</DialogTitle>
+            </DialogHeader>
 
-          <div className="space-y-2">
-            <Label htmlFor="seats">Seats</Label>
-            <Input
-              id="seats"
-              type="number"
-              min="1"
-              value={seats}
-              onChange={(e) => setSeats(Number(e.target.value))}
-              required
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
+            </div>
 
-          {error && <p className="text-sm text-destructive">{error}</p>}
+            <div className="space-y-2">
+              <Label htmlFor="seats">Seats</Label>
+              <Input
+                id="seats"
+                type="number"
+                min="1"
+                value={seats}
+                onChange={(e) => setSeats(e.target.value)}
+                required
+              />
+            </div>
 
-          <DialogFooter>
-            {value && (
-              <>
-                <Button type="button" variant="destructive" disabled={busy} onClick={remove}>
-                  Delete table
-                </Button>
-                <Button type="button" variant="outline" disabled={busy} onClick={duplicate}>
-                  Duplicate
-                </Button>
-              </>
-            )}
-            <Button type="submit" size="lg" disabled={busy}>
-              {busy ? "Saving…" : "Save"}
-            </Button>
-          </DialogFooter>
-        </form>
+            {error && <p className="text-sm text-destructive">{error}</p>}
+
+            <DialogFooter>
+              {value && (
+                <>
+                  <Button type="button" variant="destructive" disabled={busy} onClick={markDelete}>
+                    Delete table
+                  </Button>
+                  <Button type="button" variant="outline" disabled={busy} onClick={duplicate}>
+                    Duplicate
+                  </Button>
+                </>
+              )}
+              <Button type="submit" size="lg" disabled={busy}>
+                {busy ? "Saving…" : "Save"}
+              </Button>
+            </DialogFooter>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );
@@ -500,15 +738,22 @@ function TableEditModal({
 function ObstacleEditModal({
   restaurantId,
   value,
+  isPendingDelete,
+  onMarkDelete,
+  onUndoDelete,
   onClose,
 }: {
   restaurantId: number;
   value: Obstacle | null;
+  isPendingDelete: boolean;
+  onMarkDelete: () => void;
+  onUndoDelete: () => void;
   onClose: () => void;
 }) {
   const [label, setLabel] = useState(value?.label ?? "");
-  const [widthPct, setWidthPct] = useState(Math.round((value?.width ?? 0.2) * 100));
-  const [heightPct, setHeightPct] = useState(Math.round((value?.height ?? 0.2) * 100));
+  // Raw text, not a number — see the same note on TableEditModal's `seats`.
+  const [widthPct, setWidthPct] = useState(String(Math.round((value?.width ?? 0.2) * 100)));
+  const [heightPct, setHeightPct] = useState(String(Math.round((value?.height ?? 0.2) * 100)));
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -517,8 +762,8 @@ function ObstacleEditModal({
     setBusy(true);
     setError(null);
     try {
-      const width = widthPct / 100;
-      const height = heightPct / 100;
+      const width = Number(widthPct) / 100;
+      const height = Number(heightPct) / 100;
       if (value) {
         await obstaclesRepo.update(value.id, { label, width, height });
       } else {
@@ -531,77 +776,91 @@ function ObstacleEditModal({
     }
   }
 
-  async function remove() {
-    if (!value || !confirm(`Delete "${value.label}"?`)) return;
-    setBusy(true);
-    try {
-      await obstaclesRepo.remove(value.id);
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not delete obstacle.");
-      setBusy(false);
-    }
+  function markDelete() {
+    onMarkDelete();
+    onClose();
+  }
+
+  function undoDelete() {
+    onUndoDelete();
+    onClose();
   }
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
-        <form onSubmit={save} className="space-y-4">
-          <DialogHeader>
-            <DialogTitle>{value ? "Edit obstacle" : "New obstacle"}</DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-2">
-            <Label htmlFor="label">Label</Label>
-            <Input
-              id="label"
-              placeholder="Bar, kitchen, entrance…"
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="width">Width (% of room)</Label>
-              <Input
-                id="width"
-                type="number"
-                min="5"
-                max="100"
-                value={widthPct}
-                onChange={(e) => setWidthPct(Number(e.target.value))}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="height">Height (% of room)</Label>
-              <Input
-                id="height"
-                type="number"
-                min="5"
-                max="100"
-                value={heightPct}
-                onChange={(e) => setHeightPct(Number(e.target.value))}
-                required
-              />
-            </div>
-          </div>
-
-          {error && <p className="text-sm text-destructive">{error}</p>}
-
-          <DialogFooter>
-            {value && (
-              <Button type="button" variant="destructive" disabled={busy} onClick={remove}>
-                Delete
+        {isPendingDelete && value ? (
+          <div className="space-y-4">
+            <DialogHeader>
+              <DialogTitle>"{value.label}" will be deleted</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              This obstacle will be permanently deleted when you save the layout.
+            </p>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={undoDelete}>
+                Restore
               </Button>
-            )}
-            <Button type="submit" size="lg" disabled={busy}>
-              {busy ? "Saving…" : "Save"}
-            </Button>
-          </DialogFooter>
-        </form>
+            </DialogFooter>
+          </div>
+        ) : (
+          <form onSubmit={save} className="space-y-4">
+            <DialogHeader>
+              <DialogTitle>{value ? "Edit obstacle" : "New obstacle"}</DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-2">
+              <Label htmlFor="label">Label</Label>
+              <Input
+                id="label"
+                placeholder="Bar, kitchen, entrance…"
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="width">Width (% of room)</Label>
+                <Input
+                  id="width"
+                  type="number"
+                  min="5"
+                  max="100"
+                  value={widthPct}
+                  onChange={(e) => setWidthPct(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="height">Height (% of room)</Label>
+                <Input
+                  id="height"
+                  type="number"
+                  min="5"
+                  max="100"
+                  value={heightPct}
+                  onChange={(e) => setHeightPct(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
+            {error && <p className="text-sm text-destructive">{error}</p>}
+
+            <DialogFooter>
+              {value && (
+                <Button type="button" variant="destructive" disabled={busy} onClick={markDelete}>
+                  Delete
+                </Button>
+              )}
+              <Button type="submit" size="lg" disabled={busy}>
+                {busy ? "Saving…" : "Save"}
+              </Button>
+            </DialogFooter>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );
