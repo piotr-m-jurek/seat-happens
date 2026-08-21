@@ -22,7 +22,10 @@ const FLOOR_PLAN_MIN_PX = 240;
 const FLOOR_PLAN_MAX_PX = 960;
 
 export function floorPlanCanvasStyle(size: FloorPlanSize): CSSProperties {
-  const width = Math.min(FLOOR_PLAN_MAX_PX, Math.max(FLOOR_PLAN_MIN_PX, size.width * FLOOR_PLAN_SCALE));
+  const width = Math.min(
+    FLOOR_PLAN_MAX_PX,
+    Math.max(FLOOR_PLAN_MIN_PX, size.width * FLOOR_PLAN_SCALE),
+  );
   return { width: `${width}px`, aspectRatio: `${size.width} / ${size.height}` };
 }
 
@@ -32,10 +35,11 @@ export function reservationsForTable(reservations: Reservation[], tableId: numbe
     .sort((a, b) => a.startTime.localeCompare(b.startTime));
 }
 
-export function tableNamesLabel(tables: { id: number; name: string }[], tableIds: number[]): string {
-  return tableIds
-    .map((id) => tables.find((t) => t.id === id)?.name ?? "—")
-    .join(" + ");
+export function tableNamesLabel(
+  tables: { id: number; name: string }[],
+  tableIds: number[],
+): string {
+  return tableIds.map((id) => tables.find((t) => t.id === id)?.name ?? "—").join(" + ");
 }
 
 // A "time of day" (no date, e.g. "09:00" or the "09:00:00" Postgres sends
@@ -73,7 +77,12 @@ export function defaultReservationTime(): string {
   return formatTimeOfDay(Duration.sum(Duration.hours(parts.hour), Duration.minutes(roundedMinute)));
 }
 
-function timeRangesOverlap(aStart: string, aDurationMin: number, bStart: string, bDurationMin: number): boolean {
+function timeRangesOverlap(
+  aStart: string,
+  aDurationMin: number,
+  bStart: string,
+  bDurationMin: number,
+): boolean {
   const aFrom = Duration.toMinutes(parseTimeOfDay(aStart));
   const aTo = aFrom + aDurationMin;
   const bFrom = Duration.toMinutes(parseTimeOfDay(bStart));
@@ -90,13 +99,13 @@ export function overlappingReservations(
   date: string,
   startTime: string,
   durationMin: number,
-  excludeId?: number
+  excludeId?: number,
 ): Reservation[] {
   return reservations.filter(
     (r) =>
       r.id !== excludeId &&
       r.date === date &&
       r.tableIds.some((id) => tableIds.includes(id)) &&
-      timeRangesOverlap(r.startTime, r.durationMin, startTime, durationMin)
+      timeRangesOverlap(r.startTime, r.durationMin, startTime, durationMin),
   );
 }

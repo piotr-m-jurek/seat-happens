@@ -21,7 +21,10 @@ export const floorPlanRepo: FloorPlanRepo = {
   async update(restaurantId, patch) {
     const { data, error } = await supabase
       .from("floor_plan")
-      .upsert({ restaurant_id: restaurantId, ...DEFAULT_SIZE, ...patch }, { onConflict: "restaurant_id" })
+      .upsert(
+        { restaurant_id: restaurantId, ...DEFAULT_SIZE, ...patch },
+        { onConflict: "restaurant_id" },
+      )
       .select()
       .single();
     if (error) throw error;
@@ -33,10 +36,15 @@ export const floorPlanRepo: FloorPlanRepo = {
       .channel(`floor-plan-changes-${restaurantId}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "floor_plan", filter: `restaurant_id=eq.${restaurantId}` },
+        {
+          event: "*",
+          schema: "public",
+          table: "floor_plan",
+          filter: `restaurant_id=eq.${restaurantId}`,
+        },
         () => {
           this.get(restaurantId).then(cb).catch(console.error);
-        }
+        },
       )
       .subscribe();
     return () => {

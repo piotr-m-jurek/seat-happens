@@ -1,6 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAtom } from "@effect/atom-react";
 import type { Restaurant, Staff } from "@sit-happens/shared";
@@ -29,7 +35,13 @@ function RestaurantSwitcherItem({ restaurantId }: { restaurantId: number }) {
 
 // Only rendered when the account has more than one membership — the common
 // single-restaurant case keeps the plain heading, no async lookup needed.
-function RestaurantSwitcher({ memberships, restaurant }: { memberships: Staff[]; restaurant: Restaurant }) {
+function RestaurantSwitcher({
+  memberships,
+  restaurant,
+}: {
+  memberships: Staff[];
+  restaurant: Restaurant;
+}) {
   return (
     <Select value={restaurant.slug} onValueChange={(slug) => navigate(`/r/${slug}`)}>
       <SelectTrigger className="w-auto whitespace-nowrap text-lg font-semibold">
@@ -80,7 +92,10 @@ export function AppShell({
           value={selectedDate}
           onChange={(e) => setSelectedDate(e.target.value)}
         />
-        <Tabs value={view} onValueChange={(v) => setView(v as "floor" | "agenda" | "layout" | "staff")}>
+        <Tabs
+          value={view}
+          onValueChange={(v) => setView(v as "floor" | "agenda" | "layout" | "staff")}
+        >
           <TabsList>
             <TabsTrigger value="floor">Floor Plan</TabsTrigger>
             <TabsTrigger value="agenda">Agenda</TabsTrigger>
@@ -98,7 +113,11 @@ export function AppShell({
       <main className="flex-1 overflow-auto p-5">
         {view === "floor" && <FloorPlan restaurantId={restaurant.id} />}
         {view === "agenda" && (
-          <AgendaList restaurantId={restaurant.id} canWrite={canWrite} onOpenReservation={setReservationDraft} />
+          <AgendaList
+            restaurantId={restaurant.id}
+            canWrite={canWrite}
+            onOpenReservation={setReservationDraft}
+          />
         )}
         {view === "layout" && canWrite && <LayoutEditor restaurantId={restaurant.id} />}
         {view === "staff" && isOwner && <StaffTab restaurantId={restaurant.id} />}
@@ -115,7 +134,11 @@ export function AppShell({
       )}
 
       {reservationDraft && (
-        <ReservationForm restaurantId={restaurant.id} draft={reservationDraft} onClose={() => setReservationDraft(null)} />
+        <ReservationForm
+          restaurantId={restaurant.id}
+          draft={reservationDraft}
+          onClose={() => setReservationDraft(null)}
+        />
       )}
     </div>
   );

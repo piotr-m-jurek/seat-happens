@@ -12,7 +12,9 @@ import { navigate, useRoute } from "./lib/router";
 import { AdminPage } from "./pages/AdminPage";
 
 function Loading() {
-  return <div className="flex h-full items-center justify-center text-muted-foreground">Loading…</div>;
+  return (
+    <div className="flex h-full items-center justify-center text-muted-foreground">Loading…</div>
+  );
 }
 
 function InfoCard({ title, description }: { title: string; description: string }) {
@@ -110,7 +112,8 @@ export default function App() {
   const route = useRoute();
   const sessionResult = useAtomValue(sessionAtom);
   const membershipsResult = useAtomValue(staffMembershipsAtom);
-  const authReady = !AsyncResult.isInitial(sessionResult) && !AsyncResult.isInitial(membershipsResult);
+  const authReady =
+    !AsyncResult.isInitial(sessionResult) && !AsyncResult.isInitial(membershipsResult);
   const session = AsyncResult.getOrElse(sessionResult, () => null);
   const memberships = AsyncResult.getOrElse(membershipsResult, () => []);
   const [showLogin, setShowLogin] = useState(false);

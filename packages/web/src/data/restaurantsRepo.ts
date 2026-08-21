@@ -7,13 +7,21 @@ function toRestaurant(row: any): Restaurant {
 
 export const restaurantsRepo: RestaurantsRepo = {
   async getBySlug(slug) {
-    const { data, error } = await supabase.from("restaurants").select("*").eq("slug", slug).maybeSingle();
+    const { data, error } = await supabase
+      .from("restaurants")
+      .select("*")
+      .eq("slug", slug)
+      .maybeSingle();
     if (error) throw error;
     return data ? toRestaurant(data) : null;
   },
 
   async getById(id) {
-    const { data, error } = await supabase.from("restaurants").select("*").eq("id", id).maybeSingle();
+    const { data, error } = await supabase
+      .from("restaurants")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
     if (error) throw error;
     return data ? toRestaurant(data) : null;
   },

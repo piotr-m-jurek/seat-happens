@@ -1,5 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { useAtomValue } from "@effect/atom-react";
 import { reservationsAtom, reservationsKey, selectedDateAtom, tablesAtom } from "../atoms";
 import { useCollection } from "../atoms/collection";
@@ -47,7 +53,9 @@ export function TableDetailPanel({
               <div
                 key={r.id}
                 className={`flex items-center justify-between gap-3 rounded-lg border-2 p-3 ${canWrite ? "cursor-pointer hover:bg-accent" : ""}`}
-                onClick={canWrite ? () => onOpenReservation({ id: r.id, tableIds: r.tableIds }) : undefined}
+                onClick={
+                  canWrite ? () => onOpenReservation({ id: r.id, tableIds: r.tableIds }) : undefined
+                }
               >
                 <div>
                   <p className="text-base">
@@ -77,7 +85,11 @@ export function TableDetailPanel({
 
         {canWrite && (
           <div className="px-4 pb-4">
-            <Button size="lg" className="w-full" onClick={() => onOpenReservation({ tableIds: [tableId] })}>
+            <Button
+              size="lg"
+              className="w-full"
+              onClick={() => onOpenReservation({ tableIds: [tableId] })}
+            >
               + New reservation
             </Button>
           </div>

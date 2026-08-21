@@ -24,7 +24,10 @@ export function AgendaList({
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Today's reservations</h2>
         {canWrite && (
-          <Button disabled={tables.length === 0} onClick={() => onOpenReservation({ tableIds: [tables[0].id] })}>
+          <Button
+            disabled={tables.length === 0}
+            onClick={() => onOpenReservation({ tableIds: [tables[0].id] })}
+          >
             + New reservation
           </Button>
         )}
@@ -36,11 +39,13 @@ export function AgendaList({
             <li
               key={r.id}
               className={`rounded-lg border-2 bg-card p-3 ${canWrite ? "cursor-pointer hover:bg-accent" : ""}`}
-              onClick={canWrite ? () => onOpenReservation({ id: r.id, tableIds: r.tableIds }) : undefined}
+              onClick={
+                canWrite ? () => onOpenReservation({ id: r.id, tableIds: r.tableIds }) : undefined
+              }
             >
               <p className="text-base">
-                <strong>{formatTime(r.startTime)}</strong> · {tableNamesLabel(tables, r.tableIds)} · {r.guestName} ·{" "}
-                {r.partySize}p
+                <strong>{formatTime(r.startTime)}</strong> · {tableNamesLabel(tables, r.tableIds)} ·{" "}
+                {r.guestName} · {r.partySize}p
               </p>
               {r.notes && <p className="text-sm text-muted-foreground">{r.notes}</p>}
             </li>

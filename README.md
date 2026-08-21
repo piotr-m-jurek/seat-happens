@@ -48,7 +48,7 @@ them from the header once signed in.
    or alongside, email.)
 3. Run the migrations in `supabase/migrations/` against the project (via the
    SQL editor in the Supabase dashboard, or the Supabase CLI: `bunx supabase
-   login`, `bunx supabase link --project-ref <ref>`, `bunx supabase db push`).
+login`, `bunx supabase link --project-ref <ref>`, `bunx supabase db push`).
 4. Grab the project's **URL** and **anon public key** from
    **Settings → API**.
 
@@ -67,6 +67,7 @@ self-service through the app itself.
    insert into super_admins (id)
    select id from auth.users where email = 'you@example.com';
    ```
+
 3. Reload the app and go to `/admin`. Create your first restaurant there,
    entering your own email as its owner — you'll get access the next time
    you sign in (the "Not set up yet" screen will resolve on your next login,

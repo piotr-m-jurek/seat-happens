@@ -1,9 +1,21 @@
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Obstacle, Table } from "@sit-happens/shared";
-import { useRef, useState, type FormEvent, type PointerEvent as ReactPointerEvent, type RefObject } from "react";
+import {
+  useRef,
+  useState,
+  type FormEvent,
+  type PointerEvent as ReactPointerEvent,
+  type RefObject,
+} from "react";
 import { floorPlanAtom, obstaclesAtom, tablesAtom } from "../atoms";
 import { useAsyncValue, useCollection } from "../atoms/collection";
 import { floorPlanRepo } from "../data/floorPlanRepo";
@@ -23,7 +35,7 @@ function useDragAndResize(
   canvasRef: RefObject<HTMLDivElement | null>,
   onDragEnd: (rect: Rect) => void,
   onResizeEnd: (rect: Rect) => void,
-  onClick: () => void
+  onClick: () => void,
 ) {
   const [rect, setRect] = useState(rectNow);
   const dragging = useRef(false);
@@ -107,7 +119,15 @@ function useDragAndResize(
     onResizeEnd(rect);
   }
 
-  return { rect, onPointerDown, onPointerMove, onPointerUp, onResizePointerDown, onResizePointerMove, onResizePointerUp };
+  return {
+    rect,
+    onPointerDown,
+    onPointerMove,
+    onPointerUp,
+    onResizePointerDown,
+    onResizePointerMove,
+    onResizePointerUp,
+  };
 }
 
 function ResizeHandle({
@@ -152,7 +172,7 @@ function LayoutTableNode({
     canvasRef,
     (r) => tablesRepo.update(table.id, { x: r.x, y: r.y }),
     (r) => tablesRepo.update(table.id, r),
-    onEdit
+    onEdit,
   );
 
   return (
@@ -188,7 +208,12 @@ function LayoutObstacleNode({
   canvasRef: RefObject<HTMLDivElement | null>;
   onEdit: () => void;
 }) {
-  const obstacleRect: Rect = { x: obstacle.x, y: obstacle.y, width: obstacle.width, height: obstacle.height };
+  const obstacleRect: Rect = {
+    x: obstacle.x,
+    y: obstacle.y,
+    width: obstacle.width,
+    height: obstacle.height,
+  };
   const {
     rect,
     onPointerDown,
@@ -202,7 +227,7 @@ function LayoutObstacleNode({
     canvasRef,
     (r) => obstaclesRepo.update(obstacle.id, { x: r.x, y: r.y }),
     (r) => obstaclesRepo.update(obstacle.id, r),
-    onEdit
+    onEdit,
   );
 
   return (
@@ -267,7 +292,10 @@ export function LayoutEditor({ restaurantId }: { restaurantId: number }) {
     const dx = e.clientX - roomStart.current.x;
     const dy = e.clientY - roomStart.current.y;
     const width = Math.max(MIN_ROOM_UNITS, roomStartSize.current.width + dx / pxPerUnit.current.x);
-    const height = Math.max(MIN_ROOM_UNITS, roomStartSize.current.height + dy / pxPerUnit.current.y);
+    const height = Math.max(
+      MIN_ROOM_UNITS,
+      roomStartSize.current.height + dy / pxPerUnit.current.y,
+    );
     setLiveSize({ width, height });
   }
 
@@ -320,10 +348,18 @@ export function LayoutEditor({ restaurantId }: { restaurantId: number }) {
       </div>
 
       {editing?.kind === "table" && (
-        <TableEditModal restaurantId={restaurantId} value={editing.value} onClose={() => setEditing(null)} />
+        <TableEditModal
+          restaurantId={restaurantId}
+          value={editing.value}
+          onClose={() => setEditing(null)}
+        />
       )}
       {editing?.kind === "obstacle" && (
-        <ObstacleEditModal restaurantId={restaurantId} value={editing.value} onClose={() => setEditing(null)} />
+        <ObstacleEditModal
+          restaurantId={restaurantId}
+          value={editing.value}
+          onClose={() => setEditing(null)}
+        />
       )}
     </div>
   );
@@ -362,7 +398,14 @@ function TableEditModal({
       if (value) {
         await tablesRepo.update(value.id, { name, seats });
       } else {
-        await tablesRepo.create(restaurantId, { name, seats, x: 0.5, y: 0.5, width: 0.18, height: 0.2 });
+        await tablesRepo.create(restaurantId, {
+          name,
+          seats,
+          x: 0.5,
+          y: 0.5,
+          width: 0.18,
+          height: 0.2,
+        });
       }
       onClose();
     } catch (err) {
@@ -379,7 +422,7 @@ function TableEditModal({
       await tablesRepo.create(restaurantId, {
         name: nextDuplicateName(
           tables.map((t) => t.name),
-          value.name
+          value.name,
         ),
         seats: value.seats,
         x: Math.min(0.95, value.x + 0.06),

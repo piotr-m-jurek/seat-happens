@@ -76,7 +76,7 @@ export const reservationsRepo: ReservationsRepo = {
           table: "reservations",
           filter: `restaurant_id=eq.${restaurantId}`,
         },
-        refresh
+        refresh,
       )
       .subscribe();
     return () => {

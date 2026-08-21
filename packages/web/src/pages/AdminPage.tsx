@@ -1,5 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAtomRefresh } from "@effect/atom-react";
@@ -18,7 +24,11 @@ export function AdminPage() {
   const [creating, setCreating] = useState(false);
 
   if (!isSuperAdmin) {
-    return <div className="flex h-full items-center justify-center text-muted-foreground">Not authorized.</div>;
+    return (
+      <div className="flex h-full items-center justify-center text-muted-foreground">
+        Not authorized.
+      </div>
+    );
   }
 
   return (

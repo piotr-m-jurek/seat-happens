@@ -23,7 +23,7 @@ export function TableNode({
     <button
       className={cn(
         "absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-0.5 rounded-xl border-2 bg-card shadow-sm transition-colors",
-        bookings.length > 0 ? "border-primary bg-primary/5" : "border-border"
+        bookings.length > 0 ? "border-primary bg-primary/5" : "border-border",
       )}
       style={{
         left: `${table.x * 100}%`,

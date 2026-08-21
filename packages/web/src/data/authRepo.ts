@@ -62,15 +62,13 @@ export const authRepo: AuthRepo = {
       .eq("user_id", userId);
     if (error) throw error;
 
-    return data.map(
-      (row): Staff => ({
-        id: row.id,
-        restaurantId: row.restaurant_id,
-        email: row.email,
-        role: row.role as StaffRole,
-        active: row.active,
-      })
-    );
+    return data.map((row): Staff => ({
+      id: row.id,
+      restaurantId: row.restaurant_id,
+      email: row.email,
+      role: row.role as StaffRole,
+      active: row.active,
+    }));
   },
 
   async isSuperAdmin() {
@@ -78,7 +76,11 @@ export const authRepo: AuthRepo = {
     const userId = sessionData.session?.user.id;
     if (!userId) return false;
 
-    const { data, error } = await supabase.from("super_admins").select("id").eq("id", userId).maybeSingle();
+    const { data, error } = await supabase
+      .from("super_admins")
+      .select("id")
+      .eq("id", userId)
+      .maybeSingle();
     if (error) throw error;
     return data !== null;
   },

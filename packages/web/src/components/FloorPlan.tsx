@@ -19,7 +19,10 @@ export function FloorPlan({ restaurantId }: { restaurantId: number }) {
   }
 
   return (
-    <div className="relative mx-auto rounded-xl border bg-card" style={floorPlanCanvasStyle(floorPlan)}>
+    <div
+      className="relative mx-auto rounded-xl border bg-card"
+      style={floorPlanCanvasStyle(floorPlan)}
+    >
       {obstacles.map((obstacle) => (
         <div
           key={obstacle.id}

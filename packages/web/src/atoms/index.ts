@@ -18,22 +18,24 @@ import { collectionAtom, pushAtom } from "./collection";
 export const tablesAtom = Atom.family((restaurantId: number) =>
   collectionAtom({
     list: () => tablesRepo.list(restaurantId),
-    subscribe: (cb: Parameters<typeof tablesRepo.subscribe>[1]) => tablesRepo.subscribe(restaurantId, cb),
-  })
+    subscribe: (cb: Parameters<typeof tablesRepo.subscribe>[1]) =>
+      tablesRepo.subscribe(restaurantId, cb),
+  }),
 );
 
 export const obstaclesAtom = Atom.family((restaurantId: number) =>
   collectionAtom({
     list: () => obstaclesRepo.list(restaurantId),
-    subscribe: (cb: Parameters<typeof obstaclesRepo.subscribe>[1]) => obstaclesRepo.subscribe(restaurantId, cb),
-  })
+    subscribe: (cb: Parameters<typeof obstaclesRepo.subscribe>[1]) =>
+      obstaclesRepo.subscribe(restaurantId, cb),
+  }),
 );
 
 export const floorPlanAtom = Atom.family((restaurantId: number) =>
   pushAtom(
     () => floorPlanRepo.get(restaurantId),
-    (cb) => floorPlanRepo.subscribe(restaurantId, cb)
-  )
+    (cb) => floorPlanRepo.subscribe(restaurantId, cb),
+  ),
 );
 
 export function reservationsKey(restaurantId: number, date: string): string {
@@ -53,20 +55,24 @@ export const reservationsAtom = Atom.family((key: string) => {
 // One-shot lookups (no realtime) — a restaurant's own slug/name rarely
 // changes, and the restaurant list is only read from the admin page, which
 // re-triggers with useAtomRefresh after creating one.
-export const restaurantAtom = Atom.family((slug: string) => Atom.make(Effect.tryPromise(() => restaurantsRepo.getBySlug(slug))));
-export const restaurantByIdAtom = Atom.family((id: number) => Atom.make(Effect.tryPromise(() => restaurantsRepo.getById(id))));
+export const restaurantAtom = Atom.family((slug: string) =>
+  Atom.make(Effect.tryPromise(() => restaurantsRepo.getBySlug(slug))),
+);
+export const restaurantByIdAtom = Atom.family((id: number) =>
+  Atom.make(Effect.tryPromise(() => restaurantsRepo.getById(id))),
+);
 export const restaurantsListAtom = Atom.make(Effect.tryPromise(() => restaurantsRepo.list()));
 
 export const staffListAtom = Atom.family((restaurantId: number) =>
-  Atom.make(Effect.tryPromise(() => staffRepo.listForRestaurant(restaurantId)))
+  Atom.make(Effect.tryPromise(() => staffRepo.listForRestaurant(restaurantId))),
 );
 export const staffInvitesAtom = Atom.family((restaurantId: number) =>
-  Atom.make(Effect.tryPromise(() => staffRepo.listInvitesForRestaurant(restaurantId)))
+  Atom.make(Effect.tryPromise(() => staffRepo.listInvitesForRestaurant(restaurantId))),
 );
 
 export const sessionAtom = pushAtom<Session | null>(
   () => authRepo.getSession(),
-  (cb) => authRepo.onSessionChange(cb)
+  (cb) => authRepo.onSessionChange(cb),
 );
 
 // Independent of sessionAtom rather than derived from it, to keep the
@@ -75,12 +81,12 @@ export const sessionAtom = pushAtom<Session | null>(
 // membership at more than one restaurant, so this is an array.
 export const staffMembershipsAtom = pushAtom<Staff[]>(
   () => authRepo.getSession().then((s) => (s ? authRepo.getStaffMemberships() : [])),
-  (cb) => authRepo.onSessionChange((s) => (s ? authRepo.getStaffMemberships().then(cb) : cb([])))
+  (cb) => authRepo.onSessionChange((s) => (s ? authRepo.getStaffMemberships().then(cb) : cb([]))),
 );
 
 export const isSuperAdminAtom = pushAtom<boolean>(
   () => authRepo.getSession().then((s) => (s ? authRepo.isSuperAdmin() : false)),
-  (cb) => authRepo.onSessionChange((s) => (s ? authRepo.isSuperAdmin().then(cb) : cb(false)))
+  (cb) => authRepo.onSessionChange((s) => (s ? authRepo.isSuperAdmin().then(cb) : cb(false))),
 );
 
 export const selectedDateAtom = Atom.make(todayISO());

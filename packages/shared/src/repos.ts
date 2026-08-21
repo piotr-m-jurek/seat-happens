@@ -73,5 +73,9 @@ export interface ReservationsRepo {
   create(restaurantId: number, reservation: NewReservation): Promise<Reservation>;
   update(id: number, patch: Partial<NewReservation>): Promise<Reservation>;
   remove(id: number): Promise<void>;
-  subscribeByDate(restaurantId: number, date: string, cb: (reservations: Reservation[]) => void): () => void;
+  subscribeByDate(
+    restaurantId: number,
+    date: string,
+    cb: (reservations: Reservation[]) => void,
+  ): () => void;
 }

@@ -1,8 +1,20 @@
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAtomRefresh } from "@effect/atom-react";
 import type { StaffRole } from "@sit-happens/shared";
 import { useState, type FormEvent } from "react";
@@ -55,10 +67,15 @@ export function StaffTab({ restaurantId }: { restaurantId: number }) {
         <div className="space-y-2">
           <h3 className="text-sm font-medium text-muted-foreground">Pending invites</h3>
           {invites.map((i) => (
-            <div key={i.id} className="flex items-center justify-between rounded-lg border-2 border-dashed p-3">
+            <div
+              key={i.id}
+              className="flex items-center justify-between rounded-lg border-2 border-dashed p-3"
+            >
               <div>
                 <p className="font-medium">{i.email}</p>
-                <p className="text-sm text-muted-foreground capitalize">{i.role} · waiting for first sign-in</p>
+                <p className="text-sm text-muted-foreground capitalize">
+                  {i.role} · waiting for first sign-in
+                </p>
               </div>
               <Button variant="ghost" size="sm" onClick={() => revokeInvite(i.id)}>
                 Revoke
@@ -81,7 +98,13 @@ export function StaffTab({ restaurantId }: { restaurantId: number }) {
   );
 }
 
-function InviteStaffModal({ restaurantId, onClose }: { restaurantId: number; onClose: () => void }) {
+function InviteStaffModal({
+  restaurantId,
+  onClose,
+}: {
+  restaurantId: number;
+  onClose: () => void;
+}) {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<StaffRole>("viewer");
   const [error, setError] = useState<string | null>(null);
@@ -110,7 +133,13 @@ function InviteStaffModal({ restaurantId, onClose }: { restaurantId: number; onC
 
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
           </div>
 
           <div className="space-y-2">

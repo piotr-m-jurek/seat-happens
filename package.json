@@ -1,7 +1,7 @@
 {
   "name": "sit-happens",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
   "workspaces": [
     "packages/*"
   ],
@@ -10,9 +10,14 @@
     "build": "bun run --cwd packages/web build",
     "preview": "bun run --cwd packages/web preview",
     "prepare": "bun run --cwd packages/web prepare",
-    "typecheck": "bun run --cwd packages/web typecheck"
+    "typecheck": "bun run --cwd packages/web typecheck",
+    "lint": "oxlint --disable-nested-config .",
+    "format": "oxfmt .",
+    "format:check": "oxfmt --check ."
   },
   "devDependencies": {
+    "oxfmt": "^0.64.0",
+    "oxlint": "^1.79.0",
     "supabase": "^2.115.0"
   }
 }

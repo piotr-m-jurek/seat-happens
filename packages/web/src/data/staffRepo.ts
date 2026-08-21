@@ -2,11 +2,22 @@ import type { Staff, StaffInvite, StaffRepo, StaffRole } from "@sit-happens/shar
 import { supabase } from "../lib/supabaseClient";
 
 function toStaff(row: any): Staff {
-  return { id: row.id, restaurantId: row.restaurant_id, email: row.email, role: row.role as StaffRole, active: row.active };
+  return {
+    id: row.id,
+    restaurantId: row.restaurant_id,
+    email: row.email,
+    role: row.role as StaffRole,
+    active: row.active,
+  };
 }
 
 function toInvite(row: any): StaffInvite {
-  return { id: row.id, restaurantId: row.restaurant_id, email: row.email, role: row.role as StaffRole };
+  return {
+    id: row.id,
+    restaurantId: row.restaurant_id,
+    email: row.email,
+    role: row.role as StaffRole,
+  };
 }
 
 export const staffRepo: StaffRepo = {
@@ -46,7 +57,12 @@ export const staffRepo: StaffRepo = {
   },
 
   async updateRole(id, role) {
-    const { data, error } = await supabase.from("staff").update({ role }).eq("id", id).select().single();
+    const { data, error } = await supabase
+      .from("staff")
+      .update({ role })
+      .eq("id", id)
+      .select()
+      .single();
     if (error) throw error;
     return toStaff(data);
   },

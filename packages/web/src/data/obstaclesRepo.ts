@@ -47,10 +47,15 @@ export const obstaclesRepo: ObstaclesRepo = {
       .channel(`obstacles-changes-${restaurantId}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "obstacles", filter: `restaurant_id=eq.${restaurantId}` },
+        {
+          event: "*",
+          schema: "public",
+          table: "obstacles",
+          filter: `restaurant_id=eq.${restaurantId}`,
+        },
         () => {
           this.list(restaurantId).then(cb).catch(console.error);
-        }
+        },
       )
       .subscribe();
     return () => {

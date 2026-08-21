@@ -1,6 +1,12 @@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,7 +16,13 @@ import { useMemo, useState, type FormEvent } from "react";
 import { reservationsAtom, reservationsKey, selectedDateAtom, tablesAtom } from "../atoms";
 import { useCollection } from "../atoms/collection";
 import { reservationsRepo } from "../data/reservationsRepo";
-import { addMinutes, defaultReservationTime, formatTime, overlappingReservations, tableNamesLabel } from "../lib/reservations";
+import {
+  addMinutes,
+  defaultReservationTime,
+  formatTime,
+  overlappingReservations,
+  tableNamesLabel,
+} from "../lib/reservations";
 import type { ReservationDraft } from "./AppShell";
 
 export function ReservationForm({
@@ -28,7 +40,7 @@ export function ReservationForm({
 
   const existing = useMemo(
     () => (draft.id ? (reservations.find((r) => r.id === draft.id) ?? null) : null),
-    [draft.id, reservations]
+    [draft.id, reservations],
   );
 
   const [tableIds, setTableIds] = useState(existing?.tableIds ?? draft.tableIds);
@@ -44,7 +56,14 @@ export function ReservationForm({
   const selectedTables = tables.filter((t) => tableIds.includes(t.id));
   const totalSeats = selectedTables.reduce((sum, t) => sum + t.seats, 0);
   const overCapacity = selectedTables.length > 0 && partySize > totalSeats;
-  const conflicts = overlappingReservations(reservations, tableIds, date, startTime, durationMin, existing?.id);
+  const conflicts = overlappingReservations(
+    reservations,
+    tableIds,
+    date,
+    startTime,
+    durationMin,
+    existing?.id,
+  );
 
   function toggleTable(id: number, checked: boolean) {
     setTableIds((ids) => (checked ? [...ids, id] : ids.filter((i) => i !== id)));
@@ -103,7 +122,9 @@ export function ReservationForm({
 
           <div className="space-y-2">
             <Label>Tables</Label>
-            <p className="text-sm text-muted-foreground">Select more than one to seat a party across several tables.</p>
+            <p className="text-sm text-muted-foreground">
+              Select more than one to seat a party across several tables.
+            </p>
             <div className="max-h-48 space-y-1 overflow-y-auto rounded-md border p-2">
               {tables.map((t) => (
                 <label
@@ -124,7 +145,12 @@ export function ReservationForm({
 
           <div className="space-y-2">
             <Label htmlFor="guestName">Guest name</Label>
-            <Input id="guestName" value={guestName} onChange={(e) => setGuestName(e.target.value)} required />
+            <Input
+              id="guestName"
+              value={guestName}
+              onChange={(e) => setGuestName(e.target.value)}
+              required
+            />
           </div>
 
           <div className="space-y-2">
@@ -147,7 +173,13 @@ export function ReservationForm({
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-2">
               <Label htmlFor="date">Date</Label>
-              <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+              <Input
+                id="date"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="time">Time</Label>
@@ -179,7 +211,7 @@ export function ReservationForm({
               {conflicts
                 .map(
                   (c) =>
-                    `${tableNamesLabel(tables, c.tableIds)} ${formatTime(c.startTime)}–${formatTime(addMinutes(c.startTime, c.durationMin))} (${c.guestName})`
+                    `${tableNamesLabel(tables, c.tableIds)} ${formatTime(c.startTime)}–${formatTime(addMinutes(c.startTime, c.durationMin))} (${c.guestName})`,
                 )
                 .join(", ")}
               .

@@ -95,7 +95,12 @@ export function LoginForm({ onCancel }: { onCancel: () => void }) {
               <Button type="submit" size="lg" className="w-full" disabled={busy}>
                 {busy ? "Verifying…" : "Verify"}
               </Button>
-              <Button type="button" variant="link" className="w-full" onClick={() => setStep("email")}>
+              <Button
+                type="button"
+                variant="link"
+                className="w-full"
+                onClick={() => setStep("email")}
+              >
                 Use a different email
               </Button>
             </CardContent>

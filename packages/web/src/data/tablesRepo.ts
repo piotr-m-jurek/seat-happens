@@ -15,7 +15,11 @@ function toTable(row: any): Table {
 
 export const tablesRepo: TablesRepo = {
   async list(restaurantId) {
-    const { data, error } = await supabase.from("tables").select("*").eq("restaurant_id", restaurantId).order("id");
+    const { data, error } = await supabase
+      .from("tables")
+      .select("*")
+      .eq("restaurant_id", restaurantId)
+      .order("id");
     if (error) throw error;
     return data.map(toTable);
   },
@@ -51,10 +55,15 @@ export const tablesRepo: TablesRepo = {
       .channel(`tables-changes-${restaurantId}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "tables", filter: `restaurant_id=eq.${restaurantId}` },
+        {
+          event: "*",
+          schema: "public",
+          table: "tables",
+          filter: `restaurant_id=eq.${restaurantId}`,
+        },
         () => {
           this.list(restaurantId).then(cb).catch(console.error);
-        }
+        },
       )
       .subscribe();
     return () => {
