@@ -1,0 +1,47 @@
+export type StaffRole = "owner" | "staff" | "viewer";
+
+export interface Staff {
+  id: string;
+  email: string;
+  role: StaffRole;
+  active: boolean;
+}
+
+export interface Table {
+  id: number;
+  name: string;
+  seats: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface Reservation {
+  id: number;
+  tableId: number;
+  guestName: string;
+  partySize: number;
+  date: string; // 'YYYY-MM-DD'
+  startTime: string; // 'HH:MM'
+  durationMin: number;
+  notes: string | null;
+}
+
+export interface Obstacle {
+  id: number;
+  label: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface FloorPlanSize {
+  width: number;
+  height: number;
+}
+
+export type NewTable = Omit<Table, "id">;
+export type NewReservation = Omit<Reservation, "id">;
+export type NewObstacle = Omit<Obstacle, "id">;
