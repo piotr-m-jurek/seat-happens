@@ -10,13 +10,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useAtomValue } from "@effect/atom-react";
-import { addMinutes, evaluateBooking, formatTime, type NewReservation } from "@sit-happens/shared";
-import { useMemo, useState, type FormEvent } from "react";
-import { reservationsAtom, reservationsKey, selectedDateAtom, tablesAtom } from "../atoms";
-import { useCollection } from "../atoms/collection";
-import { reservationsRepo } from "../data/reservationsRepo";
-import { defaultReservationTime, tableNamesLabel } from "../lib/reservations";
+import { addMinutes, formatTime } from "@sit-happens/shared";
+import { useReservationForm } from "../hooks/useReservationForm";
+import { tableNamesLabel } from "../lib/reservations";
 import type { ReservationDraft } from "./AppShell";
 
 export function ReservationForm({
@@ -28,84 +24,31 @@ export function ReservationForm({
   draft: ReservationDraft;
   onClose: () => void;
 }) {
-  const tables = useCollection(tablesAtom(restaurantId));
-  const selectedDate = useAtomValue(selectedDateAtom);
-  const reservations = useCollection(reservationsAtom(reservationsKey(restaurantId, selectedDate)));
-
-  const existing = useMemo(
-    () => (draft.id ? (reservations.find((r) => r.id === draft.id) ?? null) : null),
-    [draft.id, reservations],
-  );
-
-  const [tableIds, setTableIds] = useState(existing?.tableIds ?? draft.tableIds);
-  const [guestName, setGuestName] = useState(existing?.guestName ?? "");
-  // Kept as raw text (not a number) so the field can be cleared while
-  // editing instead of snapping to 0 — parsed back to a number on save.
-  const [partySize, setPartySize] = useState(String(existing?.partySize ?? 2));
-  const [date, setDate] = useState(existing?.date ?? selectedDate);
-  const [startTime, setStartTime] = useState(existing?.startTime ?? defaultReservationTime());
-  const [durationMin, setDurationMin] = useState(String(existing?.durationMin ?? 90));
-  const [notes, setNotes] = useState(existing?.notes ?? "");
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  const { totalSeats, isOverCapacity, conflicts } = evaluateBooking({
+  const {
     tables,
-    existingReservations: reservations,
+    existing,
     tableIds,
-    partySize: Number(partySize),
+    toggleTable,
+    guestName,
+    setGuestName,
+    partySize,
+    setPartySize,
     date,
+    setDate,
     startTime,
-    durationMin: Number(durationMin),
-    excludeReservationId: existing?.id,
-  });
-
-  function toggleTable(id: number, checked: boolean) {
-    setTableIds((ids) => (checked ? [...ids, id] : ids.filter((i) => i !== id)));
-  }
-
-  async function save(e: FormEvent) {
-    e.preventDefault();
-    if (tableIds.length === 0) {
-      setError("Select at least one table.");
-      return;
-    }
-    setError(null);
-    setBusy(true);
-    try {
-      const payload: NewReservation = {
-        tableIds,
-        guestName,
-        partySize: Number(partySize),
-        date,
-        startTime,
-        durationMin: Number(durationMin),
-        notes: notes || null,
-      };
-      if (existing) {
-        await reservationsRepo.update(existing.id, payload);
-      } else {
-        await reservationsRepo.create(restaurantId, payload);
-      }
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save reservation.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function remove() {
-    if (!existing || !confirm("Cancel this reservation?")) return;
-    setBusy(true);
-    try {
-      await reservationsRepo.remove(existing.id);
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not cancel reservation.");
-      setBusy(false);
-    }
-  }
+    setStartTime,
+    durationMin,
+    setDurationMin,
+    notes,
+    setNotes,
+    error,
+    busy,
+    totalSeats,
+    isOverCapacity,
+    conflicts,
+    save,
+    remove,
+  } = useReservationForm(restaurantId, draft, onClose);
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>

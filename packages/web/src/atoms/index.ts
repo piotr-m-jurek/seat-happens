@@ -1,4 +1,4 @@
-import type { Session, Staff } from "@sit-happens/shared";
+import type { FloorPlanSize, Session, Staff } from "@sit-happens/shared";
 import { Effect } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { authRepo } from "../data/authRepo";
@@ -8,6 +8,7 @@ import { reservationsRepo } from "../data/reservationsRepo";
 import { restaurantsRepo } from "../data/restaurantsRepo";
 import { staffRepo } from "../data/staffRepo";
 import { tablesRepo } from "../data/tablesRepo";
+import type { Rect } from "../lib/geometry";
 import { todayISO } from "../lib/reservations";
 import { getSearchParam } from "../lib/router";
 import { initialTheme, type Theme } from "../lib/theme";
@@ -104,3 +105,25 @@ export const selectedDateAtom = Atom.make(initialSelectedDate());
 export const selectedTableIdAtom = Atom.make<number | null>(null);
 export const viewAtom = Atom.make<"floor" | "agenda" | "layout" | "staff">("floor");
 export const themeAtom = Atom.make<Theme>(initialTheme());
+
+// Local unsaved edits from the Layout tab (position/size/deletion) — kept
+// as an atom rather than component state so switching away from the
+// Layout tab and back (AppShell unmounts LayoutEditor entirely on view
+// change) doesn't silently discard them.
+export interface LayoutDraft {
+  tables: Record<number, Rect>;
+  obstacles: Record<number, Rect>;
+  roomSize: FloorPlanSize | null;
+  deletedTables: Record<number, true>;
+  deletedObstacles: Record<number, true>;
+}
+
+const emptyLayoutDraft: LayoutDraft = {
+  tables: {},
+  obstacles: {},
+  roomSize: null,
+  deletedTables: {},
+  deletedObstacles: {},
+};
+
+export const layoutDraftAtom = Atom.family((_restaurantId: number) => Atom.make(emptyLayoutDraft));
