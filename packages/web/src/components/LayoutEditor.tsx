@@ -4,10 +4,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Obstacle, Table } from "@sit-happens/shared";
 import { useRef, useState, type FormEvent, type PointerEvent as ReactPointerEvent, type RefObject } from "react";
+import { floorPlanAtom, obstaclesAtom, tablesAtom } from "../atoms";
+import { useAsyncValue, useCollection } from "../atoms/collection";
 import { floorPlanRepo } from "../data/floorPlanRepo";
 import { obstaclesRepo } from "../data/obstaclesRepo";
 import { tablesRepo } from "../data/tablesRepo";
-import { floorPlanCanvasStyle, useStore } from "../store";
+import { floorPlanCanvasStyle } from "../lib/reservations";
 
 const DRAG_THRESHOLD_PX = 6;
 
@@ -215,9 +217,9 @@ type Editing =
 const MIN_ROOM_UNITS = 1.5;
 
 export function LayoutEditor() {
-  const tables = useStore((s) => s.tables);
-  const obstacles = useStore((s) => s.obstacles);
-  const floorPlan = useStore((s) => s.floorPlan);
+  const tables = useCollection(tablesAtom);
+  const obstacles = useCollection(obstaclesAtom);
+  const floorPlan = useAsyncValue(floorPlanAtom, { width: 4, height: 3 });
   const canvasRef = useRef<HTMLDivElement>(null);
   const [editing, setEditing] = useState<Editing>(null);
 
@@ -315,7 +317,7 @@ function nextDuplicateName(existingNames: string[], sourceName: string): string 
 }
 
 function TableEditModal({ value, onClose }: { value: Table | null; onClose: () => void }) {
-  const tables = useStore((s) => s.tables);
+  const tables = useCollection(tablesAtom);
   const [name, setName] = useState(value?.name ?? "");
   const [seats, setSeats] = useState(value?.seats ?? 2);
   const [error, setError] = useState<string | null>(null);

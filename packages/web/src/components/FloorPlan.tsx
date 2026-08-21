@@ -1,10 +1,14 @@
-import { floorPlanCanvasStyle, setSelectedTableId, useStore } from "../store";
+import { useAtom } from "@effect/atom-react";
+import { floorPlanAtom, obstaclesAtom, selectedTableIdAtom, tablesAtom } from "../atoms";
+import { useAsyncValue, useCollection } from "../atoms/collection";
+import { floorPlanCanvasStyle } from "../lib/reservations";
 import { TableNode } from "./TableNode";
 
 export function FloorPlan() {
-  const tables = useStore((s) => s.tables);
-  const obstacles = useStore((s) => s.obstacles);
-  const floorPlan = useStore((s) => s.floorPlan);
+  const tables = useCollection(tablesAtom);
+  const obstacles = useCollection(obstaclesAtom);
+  const floorPlan = useAsyncValue(floorPlanAtom, { width: 4, height: 3 });
+  const [, setSelectedTableId] = useAtom(selectedTableIdAtom);
 
   if (tables.length === 0) {
     return (

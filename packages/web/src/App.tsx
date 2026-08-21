@@ -1,18 +1,18 @@
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useEffect, useState } from "react";
+import { useAtomValue } from "@effect/atom-react";
+import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
+import { useState } from "react";
+import { sessionAtom, staffAtom } from "./atoms";
 import { AppShell } from "./components/AppShell";
 import { LandingPage } from "./components/LandingPage";
 import { LoginForm } from "./components/LoginForm";
-import { initAuth, useStore } from "./store";
 
 export default function App() {
-  useEffect(() => {
-    initAuth();
-  }, []);
-
-  const authReady = useStore((s) => s.authReady);
-  const session = useStore((s) => s.session);
-  const staff = useStore((s) => s.staff);
+  const sessionResult = useAtomValue(sessionAtom);
+  const staffResult = useAtomValue(staffAtom);
+  const authReady = !AsyncResult.isInitial(sessionResult);
+  const session = AsyncResult.getOrElse(sessionResult, () => null);
+  const staff = AsyncResult.getOrElse(staffResult, () => null);
   const [showLogin, setShowLogin] = useState(false);
 
   if (!authReady) {

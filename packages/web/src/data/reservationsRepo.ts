@@ -4,7 +4,7 @@ import { supabase } from "../lib/supabaseClient";
 function toReservation(row: any): Reservation {
   return {
     id: row.id,
-    tableId: row.table_id,
+    tableIds: row.table_ids,
     guestName: row.guest_name,
     partySize: row.party_size,
     date: row.date,
@@ -16,7 +16,7 @@ function toReservation(row: any): Reservation {
 
 function toRow(reservation: Partial<NewReservation>) {
   const row: Record<string, unknown> = {};
-  if (reservation.tableId !== undefined) row.table_id = reservation.tableId;
+  if (reservation.tableIds !== undefined) row.table_ids = reservation.tableIds;
   if (reservation.guestName !== undefined) row.guest_name = reservation.guestName;
   if (reservation.partySize !== undefined) row.party_size = reservation.partySize;
   if (reservation.date !== undefined) row.date = reservation.date;

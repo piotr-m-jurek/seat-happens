@@ -1,7 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { useAtomValue } from "@effect/atom-react";
+import { reservationsAtom, selectedDateAtom, tablesAtom } from "../atoms";
+import { useCollection } from "../atoms/collection";
 import { reservationsRepo } from "../data/reservationsRepo";
-import { formatTime, reservationsForTable, useStore } from "../store";
+import { formatTime, reservationsForTable, tableNamesLabel } from "../lib/reservations";
 import type { ReservationDraft } from "./AppShell";
 
 export function TableDetailPanel({
@@ -13,8 +16,9 @@ export function TableDetailPanel({
   onClose: () => void;
   onOpenReservation: (draft: ReservationDraft) => void;
 }) {
-  const tables = useStore((s) => s.tables);
-  const reservations = useStore((s) => s.reservations);
+  const tables = useCollection(tablesAtom);
+  const selectedDate = useAtomValue(selectedDateAtom);
+  const reservations = useCollection(reservationsAtom(selectedDate));
   const table = tables.find((t) => t.id === tableId);
   const bookings = reservationsForTable(reservations, tableId);
 
@@ -39,11 +43,12 @@ export function TableDetailPanel({
               <div
                 key={r.id}
                 className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border-2 p-3 hover:bg-accent"
-                onClick={() => onOpenReservation({ id: r.id, tableId: r.tableId })}
+                onClick={() => onOpenReservation({ id: r.id, tableIds: r.tableIds })}
               >
                 <div>
                   <p className="text-base">
                     <strong>{formatTime(r.startTime)}</strong> · {r.guestName} · {r.partySize}p
+                    {r.tableIds.length > 1 && ` · ${tableNamesLabel(tables, r.tableIds)}`}
                   </p>
                   {r.notes && <p className="text-sm text-muted-foreground">{r.notes}</p>}
                 </div>
@@ -65,7 +70,7 @@ export function TableDetailPanel({
         </div>
 
         <div className="px-4 pb-4">
-          <Button size="lg" className="w-full" onClick={() => onOpenReservation({ tableId })}>
+          <Button size="lg" className="w-full" onClick={() => onOpenReservation({ tableIds: [tableId] })}>
             + New reservation
           </Button>
         </div>

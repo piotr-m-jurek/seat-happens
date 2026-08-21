@@ -19,7 +19,7 @@ export interface Table {
 
 export interface Reservation {
   id: number;
-  tableId: number;
+  tableIds: number[];
   guestName: string;
   partySize: number;
   date: string; // 'YYYY-MM-DD'

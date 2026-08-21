@@ -11,6 +11,7 @@
     "typecheck": "tsc -b --noEmit"
   },
   "dependencies": {
+    "@effect/atom-react": "^4.0.0-rc.111",
     "@sit-happens/shared": "workspace:*",
     "@supabase/supabase-js": "^2",
     "@tailwindcss/vite": "^4.3.3",

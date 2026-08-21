@@ -6,7 +6,7 @@ export function LandingPage({ onSignIn }: { onSignIn: () => void }) {
     <div className="flex h-full items-center justify-center p-6">
       <Card className="w-full max-w-sm text-center">
         <CardHeader>
-          <CardTitle className="text-2xl">Sit Happens</CardTitle>
+          <CardTitle className="text-2xl">Seat Happens</CardTitle>
           <CardDescription>Table reservations for the front desk.</CardDescription>
         </CardHeader>
         <CardContent>

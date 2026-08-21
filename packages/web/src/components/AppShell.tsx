@@ -1,9 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAtom } from "@effect/atom-react";
 import type { Staff } from "@sit-happens/shared";
 import { useState } from "react";
-import { setSelectedDate, setSelectedTableId, setView, signOut, useStore } from "../store";
+import { selectedDateAtom, selectedTableIdAtom, viewAtom } from "../atoms";
+import { authRepo } from "../data/authRepo";
 import { AgendaList } from "./AgendaList";
 import { FloorPlan } from "./FloorPlan";
 import { LayoutEditor } from "./LayoutEditor";
@@ -12,19 +14,25 @@ import { TableDetailPanel } from "./TableDetailPanel";
 
 export interface ReservationDraft {
   id?: number;
-  tableId: number;
+  tableIds: number[];
 }
 
 export function AppShell({ staff }: { staff: Staff }) {
-  const selectedDate = useStore((s) => s.selectedDate);
-  const selectedTableId = useStore((s) => s.selectedTableId);
-  const view = useStore((s) => s.view);
+  const [selectedDate, setSelectedDate] = useAtom(selectedDateAtom);
+  const [selectedTableId, setSelectedTableId] = useAtom(selectedTableIdAtom);
+  const [view, setView] = useAtom(viewAtom);
   const [reservationDraft, setReservationDraft] = useState<ReservationDraft | null>(null);
+
+  async function signOut() {
+    await authRepo.signOut();
+    setSelectedTableId(null);
+    setView("floor");
+  }
 
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-center gap-4 border-b bg-card px-5 py-3">
-        <h1 className="whitespace-nowrap text-lg font-semibold">Sit Happens</h1>
+        <h1 className="whitespace-nowrap text-lg font-semibold">Seat Happens</h1>
         <Input
           type="date"
           className="w-auto"

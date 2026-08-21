@@ -1,13 +1,16 @@
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useAtomValue } from "@effect/atom-react";
 import type { NewReservation } from "@sit-happens/shared";
 import { useMemo, useState, type FormEvent } from "react";
+import { reservationsAtom, selectedDateAtom, tablesAtom } from "../atoms";
+import { useCollection } from "../atoms/collection";
 import { reservationsRepo } from "../data/reservationsRepo";
-import { addMinutes, formatTime, overlappingReservations, useStore } from "../store";
+import { addMinutes, formatTime, overlappingReservations, tableNamesLabel } from "../lib/reservations";
 import type { ReservationDraft } from "./AppShell";
 
 function defaultTime(): string {
@@ -17,16 +20,16 @@ function defaultTime(): string {
 }
 
 export function ReservationForm({ draft, onClose }: { draft: ReservationDraft; onClose: () => void }) {
-  const tables = useStore((s) => s.tables);
-  const reservations = useStore((s) => s.reservations);
-  const selectedDate = useStore((s) => s.selectedDate);
+  const tables = useCollection(tablesAtom);
+  const selectedDate = useAtomValue(selectedDateAtom);
+  const reservations = useCollection(reservationsAtom(selectedDate));
 
   const existing = useMemo(
     () => (draft.id ? (reservations.find((r) => r.id === draft.id) ?? null) : null),
     [draft.id, reservations]
   );
 
-  const [tableId, setTableId] = useState(existing?.tableId ?? draft.tableId);
+  const [tableIds, setTableIds] = useState(existing?.tableIds ?? draft.tableIds);
   const [guestName, setGuestName] = useState(existing?.guestName ?? "");
   const [partySize, setPartySize] = useState(existing?.partySize ?? 2);
   const [date, setDate] = useState(existing?.date ?? selectedDate);
@@ -36,17 +39,26 @@ export function ReservationForm({ draft, onClose }: { draft: ReservationDraft; o
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const table = tables.find((t) => t.id === tableId);
-  const overCapacity = table ? partySize > table.seats : false;
-  const conflicts = overlappingReservations(reservations, tableId, date, startTime, durationMin, existing?.id);
+  const selectedTables = tables.filter((t) => tableIds.includes(t.id));
+  const totalSeats = selectedTables.reduce((sum, t) => sum + t.seats, 0);
+  const overCapacity = selectedTables.length > 0 && partySize > totalSeats;
+  const conflicts = overlappingReservations(reservations, tableIds, date, startTime, durationMin, existing?.id);
+
+  function toggleTable(id: number, checked: boolean) {
+    setTableIds((ids) => (checked ? [...ids, id] : ids.filter((i) => i !== id)));
+  }
 
   async function save(e: FormEvent) {
     e.preventDefault();
+    if (tableIds.length === 0) {
+      setError("Select at least one table.");
+      return;
+    }
     setError(null);
     setBusy(true);
     try {
       const payload: NewReservation = {
-        tableId,
+        tableIds,
         guestName,
         partySize,
         date,
@@ -88,19 +100,24 @@ export function ReservationForm({ draft, onClose }: { draft: ReservationDraft; o
           </DialogHeader>
 
           <div className="space-y-2">
-            <Label htmlFor="table">Table</Label>
-            <Select value={String(tableId)} onValueChange={(v) => setTableId(Number(v))}>
-              <SelectTrigger id="table" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {tables.map((t) => (
-                  <SelectItem key={t.id} value={String(t.id)}>
+            <Label>Tables</Label>
+            <p className="text-sm text-muted-foreground">Select more than one to seat a party across several tables.</p>
+            <div className="max-h-48 space-y-1 overflow-y-auto rounded-md border p-2">
+              {tables.map((t) => (
+                <label
+                  key={t.id}
+                  className="flex items-center gap-2 rounded-md p-2 hover:bg-accent"
+                >
+                  <Checkbox
+                    checked={tableIds.includes(t.id)}
+                    onCheckedChange={(checked) => toggleTable(t.id, checked === true)}
+                  />
+                  <span>
                     {t.name} ({t.seats} seats)
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                  </span>
+                </label>
+              ))}
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -119,7 +136,9 @@ export function ReservationForm({ draft, onClose }: { draft: ReservationDraft; o
               required
             />
             {overCapacity && (
-              <p className="text-sm text-amber-600">This party is larger than the table's {table?.seats} seats.</p>
+              <p className="text-sm text-amber-600">
+                This party is larger than the selected tables' combined {totalSeats} seats.
+              </p>
             )}
           </div>
 
@@ -147,9 +166,12 @@ export function ReservationForm({ draft, onClose }: { draft: ReservationDraft; o
           </div>
           {conflicts.length > 0 && (
             <p className="text-sm text-amber-600">
-              {table?.name} is already booked{" "}
+              Already booked:{" "}
               {conflicts
-                .map((c) => `${formatTime(c.startTime)}–${formatTime(addMinutes(c.startTime, c.durationMin))} (${c.guestName})`)
+                .map(
+                  (c) =>
+                    `${tableNamesLabel(tables, c.tableIds)} ${formatTime(c.startTime)}–${formatTime(addMinutes(c.startTime, c.durationMin))} (${c.guestName})`
+                )
                 .join(", ")}
               .
             </p>
