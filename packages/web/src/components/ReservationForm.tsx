@@ -11,18 +11,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAtomValue } from "@effect/atom-react";
-import type { NewReservation } from "@sit-happens/shared";
+import { addMinutes, evaluateBooking, formatTime, type NewReservation } from "@sit-happens/shared";
 import { useMemo, useState, type FormEvent } from "react";
 import { reservationsAtom, reservationsKey, selectedDateAtom, tablesAtom } from "../atoms";
 import { useCollection } from "../atoms/collection";
 import { reservationsRepo } from "../data/reservationsRepo";
-import {
-  addMinutes,
-  defaultReservationTime,
-  formatTime,
-  overlappingReservations,
-  tableNamesLabel,
-} from "../lib/reservations";
+import { defaultReservationTime, tableNamesLabel } from "../lib/reservations";
 import type { ReservationDraft } from "./AppShell";
 
 export function ReservationForm({
@@ -55,17 +49,16 @@ export function ReservationForm({
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const selectedTables = tables.filter((t) => tableIds.includes(t.id));
-  const totalSeats = selectedTables.reduce((sum, t) => sum + t.seats, 0);
-  const overCapacity = selectedTables.length > 0 && Number(partySize) > totalSeats;
-  const conflicts = overlappingReservations(
-    reservations,
+  const { totalSeats, isOverCapacity, conflicts } = evaluateBooking({
+    tables,
+    existingReservations: reservations,
     tableIds,
+    partySize: Number(partySize),
     date,
     startTime,
-    Number(durationMin),
-    existing?.id,
-  );
+    durationMin: Number(durationMin),
+    excludeReservationId: existing?.id,
+  });
 
   function toggleTable(id: number, checked: boolean) {
     setTableIds((ids) => (checked ? [...ids, id] : ids.filter((i) => i !== id)));
@@ -165,7 +158,7 @@ export function ReservationForm({
               onChange={(e) => setPartySize(e.target.value)}
               required
             />
-            {overCapacity && (
+            {isOverCapacity && (
               <p className="text-sm text-amber-600">
                 This party is larger than the selected tables' combined {totalSeats} seats.
               </p>

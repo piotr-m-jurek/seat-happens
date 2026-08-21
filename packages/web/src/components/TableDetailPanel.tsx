@@ -7,10 +7,11 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useAtomValue } from "@effect/atom-react";
+import { formatTime, reservationsForTable } from "@sit-happens/shared";
 import { reservationsAtom, reservationsKey, selectedDateAtom, tablesAtom } from "../atoms";
 import { useCollection } from "../atoms/collection";
 import { reservationsRepo } from "../data/reservationsRepo";
-import { formatTime, reservationsForTable, tableNamesLabel } from "../lib/reservations";
+import { tableNamesLabel } from "../lib/reservations";
 import type { ReservationDraft } from "./AppShell";
 
 export function TableDetailPanel({

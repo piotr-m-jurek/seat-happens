@@ -9,7 +9,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAtomRefresh } from "@effect/atom-react";
-import type { Restaurant } from "@sit-happens/shared";
+import { isValidSlug, type Restaurant } from "@sit-happens/shared";
 import { useState, type FormEvent } from "react";
 import { isSuperAdminAtom, restaurantsListAtom } from "../atoms";
 import { useAsyncValue } from "../atoms/collection";
@@ -99,6 +99,10 @@ function NewRestaurantModal({ onClose }: { onClose: () => void }) {
 
   async function save(e: FormEvent) {
     e.preventDefault();
+    if (!isValidSlug(slug)) {
+      setError("Slug must be lowercase letters, numbers, and hyphens only, e.g. pizza-place.");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {

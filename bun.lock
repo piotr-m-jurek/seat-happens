@@ -13,6 +13,9 @@
     "packages/shared": {
       "name": "@sit-happens/shared",
       "version": "0.0.0",
+      "dependencies": {
+        "effect": "^4.0.0-rc.111",
+      },
     },
     "packages/web": {
       "name": "@sit-happens/web",

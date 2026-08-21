@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAtomRefresh } from "@effect/atom-react";
-import type { StaffRole } from "@sit-happens/shared";
+import { canRemoveStaffMember, type StaffRole } from "@sit-happens/shared";
 import { useState, type FormEvent } from "react";
 import { staffInvitesAtom, staffListAtom } from "../atoms";
 import { useAsyncValue } from "../atoms/collection";
@@ -54,7 +54,7 @@ export function StaffTab({ restaurantId }: { restaurantId: number }) {
               <p className="font-medium">{s.email}</p>
               <p className="text-sm text-muted-foreground capitalize">{s.role}</p>
             </div>
-            {s.role !== "owner" && (
+            {canRemoveStaffMember(s) && (
               <Button variant="ghost" size="sm" onClick={() => removeStaff(s.id, s.email)}>
                 Remove
               </Button>

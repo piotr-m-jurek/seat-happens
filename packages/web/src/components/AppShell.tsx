@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAtom } from "@effect/atom-react";
+import { canWrite as canWriteRole, isOwner as isOwnerRole } from "@sit-happens/shared";
 import type { Restaurant, Staff } from "@sit-happens/shared";
 import { useEffect, useState } from "react";
 import { restaurantByIdAtom, selectedDateAtom, selectedTableIdAtom, viewAtom } from "../atoms";
@@ -71,8 +72,8 @@ export function AppShell({
   const [selectedTableId, setSelectedTableId] = useAtom(selectedTableIdAtom);
   const [view, setView] = useAtom(viewAtom);
   const [reservationDraft, setReservationDraft] = useState<ReservationDraft | null>(null);
-  const canWrite = staff.role !== "viewer";
-  const isOwner = staff.role === "owner";
+  const canWrite = canWriteRole(staff.role);
+  const isOwner = isOwnerRole(staff.role);
 
   // Keeps the URL in sync with the selected date — present as ?date=
   // when it's not today, absent (and normalized away) when it is. The
