@@ -22,6 +22,7 @@ export function AdminPage() {
   const restaurants = useCollectionRestaurants();
   const refresh = useAtomRefresh(restaurantsListAtom);
   const [creating, setCreating] = useState(false);
+  const [deleting, setDeleting] = useState<Restaurant | null>(null);
 
   if (!isSuperAdmin) {
     return (
@@ -46,9 +47,14 @@ export function AdminPage() {
                 <p className="font-medium">{r.name}</p>
                 <p className="text-sm text-muted-foreground">/r/{r.slug}</p>
               </div>
-              <Button variant="outline" onClick={() => navigate(`/r/${r.slug}`)}>
-                Open
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => navigate(`/r/${r.slug}`)}>
+                  Open
+                </Button>
+                <Button variant="ghost" onClick={() => setDeleting(r)}>
+                  Delete
+                </Button>
+              </div>
             </li>
           ))}
         </ul>
@@ -60,6 +66,16 @@ export function AdminPage() {
         <NewRestaurantModal
           onClose={() => {
             setCreating(false);
+            refresh();
+          }}
+        />
+      )}
+
+      {deleting && (
+        <DeleteRestaurantModal
+          restaurant={deleting}
+          onClose={() => {
+            setDeleting(null);
             refresh();
           }}
         />
@@ -138,6 +154,71 @@ function NewRestaurantModal({ onClose }: { onClose: () => void }) {
           <DialogFooter>
             <Button type="submit" size="lg" disabled={busy}>
               {busy ? "Creating…" : "Create"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DeleteRestaurantModal({
+  restaurant,
+  onClose,
+}: {
+  restaurant: Restaurant;
+  onClose: () => void;
+}) {
+  const [confirmSlug, setConfirmSlug] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const canDelete = confirmSlug === restaurant.slug;
+
+  async function remove(e: FormEvent) {
+    e.preventDefault();
+    if (!canDelete) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await restaurantsRepo.remove(restaurant.id);
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not delete restaurant.");
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent>
+        <form onSubmit={remove} className="space-y-4">
+          <DialogHeader>
+            <DialogTitle>Delete {restaurant.name}?</DialogTitle>
+          </DialogHeader>
+
+          <p className="text-sm text-muted-foreground">
+            This permanently deletes the restaurant and everything in it — every table, obstacle,
+            reservation, layout, staff member, and pending invite. This can't be undone.
+          </p>
+
+          <div className="space-y-2">
+            <Label htmlFor="confirmSlug">
+              Type <span className="font-mono">{restaurant.slug}</span> to confirm
+            </Label>
+            <Input
+              id="confirmSlug"
+              value={confirmSlug}
+              onChange={(e) => setConfirmSlug(e.target.value)}
+              autoComplete="off"
+              required
+            />
+          </div>
+
+          {error && <p className="text-sm text-destructive">{error}</p>}
+
+          <DialogFooter>
+            <Button type="submit" variant="destructive" size="lg" disabled={busy || !canDelete}>
+              {busy ? "Deleting…" : "Delete restaurant"}
             </Button>
           </DialogFooter>
         </form>

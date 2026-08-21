@@ -41,4 +41,9 @@ export const restaurantsRepo: RestaurantsRepo = {
     if (error) throw error;
     return toRestaurant(data);
   },
+
+  async remove(id) {
+    const { error } = await supabase.from("restaurants").delete().eq("id", id);
+    if (error) throw error;
+  },
 };

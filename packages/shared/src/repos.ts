@@ -35,6 +35,9 @@ export interface RestaurantsRepo {
   getById(id: number): Promise<Restaurant | null>;
   list(): Promise<Restaurant[]>;
   create(restaurant: NewRestaurant): Promise<Restaurant>;
+  // Cascades at the DB level to every table/obstacle/reservation/staff row
+  // scoped to this restaurant. RLS restricts this to super-admins.
+  remove(id: number): Promise<void>;
 }
 
 export interface StaffRepo {
