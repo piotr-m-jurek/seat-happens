@@ -12,84 +12,33 @@ import { tablesRepo } from "../data/tablesRepo";
 import { floorPlanCanvasStyle } from "../lib/reservations";
 
 const DRAG_THRESHOLD_PX = 6;
-
-function useDragToReposition(
-  initial: { x: number; y: number },
-  canvasRef: RefObject<HTMLDivElement | null>,
-  onDrag: (pos: { x: number; y: number }) => void,
-  onClick: () => void
-) {
-  const [pos, setPos] = useState(initial);
-  const dragging = useRef(false);
-  const moved = useRef(false);
-  const start = useRef({ x: 0, y: 0 });
-
-  function onPointerDown(e: ReactPointerEvent<HTMLElement>) {
-    e.currentTarget.setPointerCapture(e.pointerId);
-    dragging.current = true;
-    moved.current = false;
-    start.current = { x: e.clientX, y: e.clientY };
-    setPos(initial);
-  }
-
-  function onPointerMove(e: ReactPointerEvent<HTMLElement>) {
-    if (!dragging.current) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    if (
-      !moved.current &&
-      Math.abs(e.clientX - start.current.x) < DRAG_THRESHOLD_PX &&
-      Math.abs(e.clientY - start.current.y) < DRAG_THRESHOLD_PX
-    ) {
-      return;
-    }
-    moved.current = true;
-    const rect = canvas.getBoundingClientRect();
-    const x = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
-    const y = Math.min(1, Math.max(0, (e.clientY - rect.top) / rect.height));
-    setPos({ x, y });
-  }
-
-  async function onPointerUp() {
-    dragging.current = false;
-    if (moved.current) {
-      onDrag(pos);
-    } else {
-      onClick();
-    }
-  }
-
-  return { pos, onPointerDown, onPointerMove, onPointerUp };
-}
-
-const MIN_TABLE_SIZE = 0.08;
+const MIN_NODE_SIZE = 0.08;
 
 type Rect = { x: number; y: number; width: number; height: number };
 
-function LayoutTableNode({
-  table,
-  canvasRef,
-  onEdit,
-}: {
-  table: Table;
-  canvasRef: RefObject<HTMLDivElement | null>;
-  onEdit: () => void;
-}) {
-  const tableRect: Rect = { x: table.x, y: table.y, width: table.width, height: table.height };
-  const [rect, setRect] = useState(tableRect);
+// Shared by tables and obstacles: drag the whole shape to reposition, or
+// drag its corner handle to resize (top-left corner stays anchored).
+function useDragAndResize(
+  rectNow: Rect,
+  canvasRef: RefObject<HTMLDivElement | null>,
+  onDragEnd: (rect: Rect) => void,
+  onResizeEnd: (rect: Rect) => void,
+  onClick: () => void
+) {
+  const [rect, setRect] = useState(rectNow);
   const dragging = useRef(false);
   const resizing = useRef(false);
   const moved = useRef(false);
   const start = useRef({ x: 0, y: 0 });
-  const startRect = useRef(tableRect);
+  const startRect = useRef(rectNow);
 
   function onPointerDown(e: ReactPointerEvent<HTMLButtonElement>) {
     e.currentTarget.setPointerCapture(e.pointerId);
     dragging.current = true;
     moved.current = false;
     start.current = { x: e.clientX, y: e.clientY };
-    startRect.current = tableRect;
-    setRect(tableRect);
+    startRect.current = rectNow;
+    setRect(rectNow);
   }
 
   function onPointerMove(e: ReactPointerEvent<HTMLButtonElement>) {
@@ -105,17 +54,21 @@ function LayoutTableNode({
     }
     moved.current = true;
     const box = canvas.getBoundingClientRect();
-    const x = Math.min(1, Math.max(0, (e.clientX - box.left) / box.width));
-    const y = Math.min(1, Math.max(0, (e.clientY - box.top) / box.height));
+    // x/y are the shape's center, so keep its edges — not just its
+    // center — inside the room.
+    const halfWidth = rectNow.width / 2;
+    const halfHeight = rectNow.height / 2;
+    const x = Math.min(1 - halfWidth, Math.max(halfWidth, (e.clientX - box.left) / box.width));
+    const y = Math.min(1 - halfHeight, Math.max(halfHeight, (e.clientY - box.top) / box.height));
     setRect((r) => ({ ...r, x, y }));
   }
 
   async function onPointerUp() {
     dragging.current = false;
     if (moved.current) {
-      await tablesRepo.update(table.id, { x: rect.x, y: rect.y });
+      onDragEnd(rect);
     } else {
-      onEdit();
+      onClick();
     }
   }
 
@@ -124,8 +77,8 @@ function LayoutTableNode({
     e.currentTarget.setPointerCapture(e.pointerId);
     resizing.current = true;
     start.current = { x: e.clientX, y: e.clientY };
-    startRect.current = tableRect;
-    setRect(tableRect);
+    startRect.current = rectNow;
+    setRect(rectNow);
   }
 
   function onResizePointerMove(e: ReactPointerEvent<HTMLDivElement>) {
@@ -135,11 +88,15 @@ function LayoutTableNode({
     const box = canvas.getBoundingClientRect();
     const dx = (e.clientX - start.current.x) / box.width;
     const dy = (e.clientY - start.current.y) / box.height;
-    const width = Math.max(MIN_TABLE_SIZE, startRect.current.width + dx);
-    const height = Math.max(MIN_TABLE_SIZE, startRect.current.height + dy);
-    // Keep the top-left corner anchored; only the dragged (bottom-right) corner moves.
-    const x = startRect.current.x + (width - startRect.current.width) / 2;
-    const y = startRect.current.y + (height - startRect.current.height) / 2;
+    // Keep the top-left corner anchored; only the dragged (bottom-right)
+    // corner moves — so cap width/height there so it can't push past the
+    // room's right/bottom edge.
+    const leftAnchor = startRect.current.x - startRect.current.width / 2;
+    const topAnchor = startRect.current.y - startRect.current.height / 2;
+    const width = Math.min(1 - leftAnchor, Math.max(MIN_NODE_SIZE, startRect.current.width + dx));
+    const height = Math.min(1 - topAnchor, Math.max(MIN_NODE_SIZE, startRect.current.height + dy));
+    const x = leftAnchor + width / 2;
+    const y = topAnchor + height / 2;
     setRect({ x, y, width, height });
   }
 
@@ -147,8 +104,56 @@ function LayoutTableNode({
     e.stopPropagation();
     if (!resizing.current) return;
     resizing.current = false;
-    await tablesRepo.update(table.id, rect);
+    onResizeEnd(rect);
   }
+
+  return { rect, onPointerDown, onPointerMove, onPointerUp, onResizePointerDown, onResizePointerMove, onResizePointerUp };
+}
+
+function ResizeHandle({
+  onPointerDown,
+  onPointerMove,
+  onPointerUp,
+}: {
+  onPointerDown: (e: ReactPointerEvent<HTMLDivElement>) => void;
+  onPointerMove: (e: ReactPointerEvent<HTMLDivElement>) => void;
+  onPointerUp: (e: ReactPointerEvent<HTMLDivElement>) => void;
+}) {
+  return (
+    <div
+      className="absolute -right-1 -bottom-1 h-4 w-4 touch-none cursor-nwse-resize rounded-full border-2 border-background bg-primary"
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+    />
+  );
+}
+
+function LayoutTableNode({
+  table,
+  canvasRef,
+  onEdit,
+}: {
+  table: Table;
+  canvasRef: RefObject<HTMLDivElement | null>;
+  onEdit: () => void;
+}) {
+  const tableRect: Rect = { x: table.x, y: table.y, width: table.width, height: table.height };
+  const {
+    rect,
+    onPointerDown,
+    onPointerMove,
+    onPointerUp,
+    onResizePointerDown,
+    onResizePointerMove,
+    onResizePointerUp,
+  } = useDragAndResize(
+    tableRect,
+    canvasRef,
+    (r) => tablesRepo.update(table.id, { x: r.x, y: r.y }),
+    (r) => tablesRepo.update(table.id, r),
+    onEdit
+  );
 
   return (
     <button
@@ -165,8 +170,7 @@ function LayoutTableNode({
     >
       <span className="font-semibold">{table.name}</span>
       <span className="text-xs text-muted-foreground">{table.seats} seats</span>
-      <div
-        className="absolute -right-1 -bottom-1 h-4 w-4 touch-none cursor-nwse-resize rounded-full border-2 border-background bg-primary"
+      <ResizeHandle
         onPointerDown={onResizePointerDown}
         onPointerMove={onResizePointerMove}
         onPointerUp={onResizePointerUp}
@@ -184,10 +188,20 @@ function LayoutObstacleNode({
   canvasRef: RefObject<HTMLDivElement | null>;
   onEdit: () => void;
 }) {
-  const { pos, onPointerDown, onPointerMove, onPointerUp } = useDragToReposition(
-    { x: obstacle.x, y: obstacle.y },
+  const obstacleRect: Rect = { x: obstacle.x, y: obstacle.y, width: obstacle.width, height: obstacle.height };
+  const {
+    rect,
+    onPointerDown,
+    onPointerMove,
+    onPointerUp,
+    onResizePointerDown,
+    onResizePointerMove,
+    onResizePointerUp,
+  } = useDragAndResize(
+    obstacleRect,
     canvasRef,
-    (p) => obstaclesRepo.update(obstacle.id, p),
+    (r) => obstaclesRepo.update(obstacle.id, { x: r.x, y: r.y }),
+    (r) => obstaclesRepo.update(obstacle.id, r),
     onEdit
   );
 
@@ -195,16 +209,21 @@ function LayoutObstacleNode({
     <button
       className="absolute flex -translate-x-1/2 -translate-y-1/2 cursor-grab touch-none items-center justify-center rounded-md border-2 border-dashed border-muted-foreground/40 bg-muted/60 text-sm text-muted-foreground"
       style={{
-        left: `${pos.x * 100}%`,
-        top: `${pos.y * 100}%`,
-        width: `${obstacle.width * 100}%`,
-        height: `${obstacle.height * 100}%`,
+        left: `${rect.x * 100}%`,
+        top: `${rect.y * 100}%`,
+        width: `${rect.width * 100}%`,
+        height: `${rect.height * 100}%`,
       }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
     >
       {obstacle.label}
+      <ResizeHandle
+        onPointerDown={onResizePointerDown}
+        onPointerMove={onResizePointerMove}
+        onPointerUp={onResizePointerUp}
+      />
     </button>
   );
 }
