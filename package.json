@@ -8,7 +8,9 @@
   "scripts": {
     "dev": "bun run --cwd packages/web dev",
     "build": "bun run --cwd packages/web build",
-    "preview": "bun run --cwd packages/web preview"
+    "preview": "bun run --cwd packages/web preview",
+    "prepare": "bun run --cwd packages/web prepare",
+    "typecheck": "bun run --cwd packages/web typecheck"
   },
   "devDependencies": {
     "supabase": "^2.115.0"
