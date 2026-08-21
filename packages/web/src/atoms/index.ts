@@ -71,10 +71,11 @@ export const sessionAtom = pushAtom<Session | null>(
 
 // Independent of sessionAtom rather than derived from it, to keep the
 // dependency simple — re-fetches staff on every session change the same
-// way sessionAtom re-fetches the session itself.
-export const staffAtom = pushAtom<Staff | null>(
-  () => authRepo.getSession().then((s) => (s ? authRepo.getStaff() : null)),
-  (cb) => authRepo.onSessionChange((s) => (s ? authRepo.getStaff().then(cb) : cb(null)))
+// way sessionAtom re-fetches the session itself. One person can have a
+// membership at more than one restaurant, so this is an array.
+export const staffMembershipsAtom = pushAtom<Staff[]>(
+  () => authRepo.getSession().then((s) => (s ? authRepo.getStaffMemberships() : [])),
+  (cb) => authRepo.onSessionChange((s) => (s ? authRepo.getStaffMemberships().then(cb) : cb([])))
 );
 
 export const isSuperAdminAtom = pushAtom<boolean>(

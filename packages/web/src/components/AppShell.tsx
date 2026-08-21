@@ -1,11 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAtom } from "@effect/atom-react";
 import type { Restaurant, Staff } from "@sit-happens/shared";
 import { useState } from "react";
-import { selectedDateAtom, selectedTableIdAtom, viewAtom } from "../atoms";
+import { restaurantByIdAtom, selectedDateAtom, selectedTableIdAtom, viewAtom } from "../atoms";
+import { useAsyncValue } from "../atoms/collection";
 import { authRepo } from "../data/authRepo";
+import { navigate } from "../lib/router";
 import { AgendaList } from "./AgendaList";
 import { FloorPlan } from "./FloorPlan";
 import { LayoutEditor } from "./LayoutEditor";
@@ -18,7 +21,38 @@ export interface ReservationDraft {
   tableIds: number[];
 }
 
-export function AppShell({ staff, restaurant }: { staff: Staff; restaurant: Restaurant }) {
+function RestaurantSwitcherItem({ restaurantId }: { restaurantId: number }) {
+  const restaurant = useAsyncValue(restaurantByIdAtom(restaurantId), null);
+  if (!restaurant) return null;
+  return <SelectItem value={restaurant.slug}>{restaurant.name}</SelectItem>;
+}
+
+// Only rendered when the account has more than one membership — the common
+// single-restaurant case keeps the plain heading, no async lookup needed.
+function RestaurantSwitcher({ memberships, restaurant }: { memberships: Staff[]; restaurant: Restaurant }) {
+  return (
+    <Select value={restaurant.slug} onValueChange={(slug) => navigate(`/r/${slug}`)}>
+      <SelectTrigger className="w-auto whitespace-nowrap text-lg font-semibold">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {memberships.map((m) => (
+          <RestaurantSwitcherItem key={m.restaurantId} restaurantId={m.restaurantId} />
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+export function AppShell({
+  staff,
+  restaurant,
+  memberships,
+}: {
+  staff: Staff;
+  restaurant: Restaurant;
+  memberships: Staff[];
+}) {
   const [selectedDate, setSelectedDate] = useAtom(selectedDateAtom);
   const [selectedTableId, setSelectedTableId] = useAtom(selectedTableIdAtom);
   const [view, setView] = useAtom(viewAtom);
@@ -35,7 +69,11 @@ export function AppShell({ staff, restaurant }: { staff: Staff; restaurant: Rest
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-center gap-4 border-b bg-card px-5 py-3">
-        <h1 className="whitespace-nowrap text-lg font-semibold">{restaurant.name}</h1>
+        {memberships.length > 1 ? (
+          <RestaurantSwitcher memberships={memberships} restaurant={restaurant} />
+        ) : (
+          <h1 className="whitespace-nowrap text-lg font-semibold">{restaurant.name}</h1>
+        )}
         <Input
           type="date"
           className="w-auto"

@@ -7,7 +7,7 @@ export interface Restaurant {
 }
 
 export interface Staff {
-  id: string;
+  id: number;
   restaurantId: number;
   email: string;
   role: StaffRole;

@@ -17,7 +17,7 @@ export function StaffTab({ restaurantId }: { restaurantId: number }) {
   const refreshInvites = useAtomRefresh(staffInvitesAtom(restaurantId));
   const [inviting, setInviting] = useState(false);
 
-  async function removeStaff(id: string, email: string) {
+  async function removeStaff(id: number, email: string) {
     if (!confirm(`Remove ${email}'s access?`)) return;
     await staffRepo.remove(id);
     refreshStaff();

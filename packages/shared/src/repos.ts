@@ -24,7 +24,9 @@ export interface AuthRepo {
   requestOtp(email: string): Promise<void>;
   verifyOtp(email: string, code: string): Promise<Session>;
   signOut(): Promise<void>;
-  getStaff(): Promise<Staff | null>;
+  // One person can be staff at multiple restaurants — every active
+  // membership for the signed-in user.
+  getStaffMemberships(): Promise<Staff[]>;
   isSuperAdmin(): Promise<boolean>;
 }
 
@@ -40,8 +42,8 @@ export interface StaffRepo {
   listInvitesForRestaurant(restaurantId: number): Promise<StaffInvite[]>;
   invite(restaurantId: number, email: string, role: StaffRole): Promise<StaffInvite>;
   removeInvite(id: number): Promise<void>;
-  updateRole(id: string, role: StaffRole): Promise<Staff>;
-  remove(id: string): Promise<void>;
+  updateRole(id: number, role: StaffRole): Promise<Staff>;
+  remove(id: number): Promise<void>;
 }
 
 export interface TablesRepo {

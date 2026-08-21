@@ -45,31 +45,32 @@ export const authRepo: AuthRepo = {
     if (error) throw error;
   },
 
-  async getStaff() {
+  async getStaffMemberships() {
     const { data: sessionData } = await supabase.auth.getSession();
     const userId = sessionData.session?.user.id;
-    if (!userId) return null;
+    if (!userId) return [];
 
     // Redeem any pending invite for this email before checking staff —
     // no-ops if none exists. See supabase/migrations/0009_multi_tenant.sql.
     await supabase.rpc("redeem_staff_invite");
 
+    // One person can have a staff row per restaurant now (0012), so this
+    // is every membership, not a single row.
     const { data, error } = await supabase
       .from("staff")
       .select("id, restaurant_id, email, role, active")
-      .eq("id", userId)
-      .maybeSingle();
+      .eq("user_id", userId);
     if (error) throw error;
-    if (!data) return null;
 
-    const staff: Staff = {
-      id: data.id,
-      restaurantId: data.restaurant_id,
-      email: data.email,
-      role: data.role as StaffRole,
-      active: data.active,
-    };
-    return staff;
+    return data.map(
+      (row): Staff => ({
+        id: row.id,
+        restaurantId: row.restaurant_id,
+        email: row.email,
+        role: row.role as StaffRole,
+        active: row.active,
+      })
+    );
   },
 
   async isSuperAdmin() {

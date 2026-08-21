@@ -30,7 +30,9 @@ other restaurant in the same deployment.
   the Layout tab, the Staff tab) is hidden in the UI and rejected by RLS if
   attempted directly.
 
-One `staff` row per person — an email belongs to exactly one restaurant.
+One person can be staff at more than one restaurant — a `staff` row is
+per (person, restaurant), and an account with several switches between
+them from the header once signed in.
 
 ## 1. Create the Supabase project
 
