@@ -40,52 +40,61 @@ type DeletedMap = Record<number, true>;
 // not on save itself, since the realtime echo of our own write can lag
 // behind the write's own response and would otherwise flash the shape
 // back to its pre-save position for a moment.
+//
+// Only calls setDraft when something actually needs to change — unlike
+// useState's setter, an atom's setter doesn't skip notifying subscribers
+// just because the new value is reference-equal to the old one, so
+// calling it unconditionally on every effect run (this one re-runs most
+// renders, since toRect is a fresh closure each time) becomes an infinite
+// render loop instead of a harmless no-op.
 function useDraftSync<T extends { id: number }>(
   items: T[],
   toRect: (item: T) => Rect,
+  draft: RectMap,
   setDraft: (updater: (d: RectMap) => RectMap) => void,
 ) {
   useEffect(() => {
-    setDraft((draft) => {
-      let next: RectMap | null = null;
-      for (const item of items) {
-        const pending = draft[item.id];
-        if (pending && sameRect(pending, toRect(item))) {
-          next ??= { ...draft };
-          delete next[item.id];
-        }
+    let next: RectMap | null = null;
+    for (const item of items) {
+      const pending = draft[item.id];
+      if (pending && sameRect(pending, toRect(item))) {
+        next ??= { ...draft };
+        delete next[item.id];
       }
-      return next ?? draft;
-    });
-  }, [items, toRect, setDraft]);
+    }
+    if (next) {
+      const resolved = next;
+      setDraft(() => resolved);
+    }
+  }, [items, toRect, draft, setDraft]);
 }
 
 // Drops a pending-delete id once it's no longer in the server-driven list
-// — same reasoning as useDraftSync: don't clear it right on save, since
-// the realtime echo of our own delete can lag behind the delete's own
-// response and would otherwise flash the shape back for a moment.
+// — same reasoning as useDraftSync (both the "don't clear on save" logic
+// and the "only call setDraft when something changed" guard).
 function useDeleteDraftSync(
   items: { id: number }[],
+  deleted: DeletedMap,
   setDeleted: (updater: (d: DeletedMap) => DeletedMap) => void,
 ) {
   useEffect(() => {
-    setDeleted((deleted) => {
-      const currentIds = new Set(items.map((item) => item.id));
-      let changed = false;
-      const next: DeletedMap = {};
-      for (const idStr of Object.keys(deleted)) {
-        const id = Number(idStr);
-        // Still present server-side: the delete hasn't landed yet, keep it
-        // pending. Gone from the list: the delete is confirmed, drop it.
-        if (currentIds.has(id)) {
-          next[id] = true;
-        } else {
-          changed = true;
-        }
+    const currentIds = new Set(items.map((item) => item.id));
+    let changed = false;
+    const next: DeletedMap = {};
+    for (const idStr of Object.keys(deleted)) {
+      const id = Number(idStr);
+      // Still present server-side: the delete hasn't landed yet, keep it
+      // pending. Gone from the list: the delete is confirmed, drop it.
+      if (currentIds.has(id)) {
+        next[id] = true;
+      } else {
+        changed = true;
       }
-      return changed ? next : deleted;
-    });
-  }, [items, setDeleted]);
+    }
+    if (changed) {
+      setDeleted(() => next);
+    }
+  }, [items, deleted, setDeleted]);
 }
 
 // Owns everything the Layout tab needs beyond rendering: the server data,
@@ -123,18 +132,22 @@ export function useLayoutDraft(restaurantId: number) {
   useDraftSync(
     tables,
     (t) => ({ x: t.x, y: t.y, width: t.width, height: t.height }),
+    draft.tables,
     setDraftTables,
   );
   useDraftSync(
     obstacles,
     (o) => ({ x: o.x, y: o.y, width: o.width, height: o.height }),
+    draft.obstacles,
     setDraftObstacles,
   );
-  useDeleteDraftSync(tables, setDeletedTables);
-  useDeleteDraftSync(obstacles, setDeletedObstacles);
+  useDeleteDraftSync(tables, draft.deletedTables, setDeletedTables);
+  useDeleteDraftSync(obstacles, draft.deletedObstacles, setDeletedObstacles);
   useEffect(() => {
-    setDraft((d) => (d.roomSize && sameSize(d.roomSize, floorPlan) ? { ...d, roomSize: null } : d));
-  }, [floorPlan, setDraft]);
+    if (draft.roomSize && sameSize(draft.roomSize, floorPlan)) {
+      setDraft((d) => ({ ...d, roomSize: null }));
+    }
+  }, [floorPlan, draft.roomSize, setDraft]);
 
   const isDirty =
     Object.keys(draft.tables).length > 0 ||
