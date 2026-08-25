@@ -35,6 +35,7 @@ export interface Reservation {
   id: number;
   tableIds: number[];
   guestName: string;
+  phone: string | null;
   partySize: number;
   date: string; // 'YYYY-MM-DD'
   startTime: string; // 'HH:MM'

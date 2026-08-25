@@ -6,6 +6,7 @@ function toReservation(row: any): Reservation {
     id: row.id,
     tableIds: row.table_ids,
     guestName: row.guest_name,
+    phone: row.phone,
     partySize: row.party_size,
     date: row.date,
     startTime: row.start_time,
@@ -18,6 +19,7 @@ function toRow(reservation: Partial<NewReservation>) {
   const row: Record<string, unknown> = {};
   if (reservation.tableIds !== undefined) row.table_ids = reservation.tableIds;
   if (reservation.guestName !== undefined) row.guest_name = reservation.guestName;
+  if (reservation.phone !== undefined) row.phone = reservation.phone;
   if (reservation.partySize !== undefined) row.party_size = reservation.partySize;
   if (reservation.date !== undefined) row.date = reservation.date;
   if (reservation.startTime !== undefined) row.start_time = reservation.startTime;
@@ -34,6 +36,15 @@ export const reservationsRepo: ReservationsRepo = {
       .eq("restaurant_id", restaurantId)
       .eq("date", date)
       .order("start_time");
+    if (error) throw error;
+    return data.map(toReservation);
+  },
+
+  async search(restaurantId, query) {
+    const { data, error } = await supabase.rpc("search_reservations", {
+      p_restaurant_id: restaurantId,
+      p_query: query,
+    });
     if (error) throw error;
     return data.map(toReservation);
   },

@@ -16,7 +16,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAtom } from "@effect/atom-react";
 import { canWrite as canWriteRole, isOwner as isOwnerRole } from "@seat-happens/shared";
 import type { Restaurant, Staff } from "@seat-happens/shared";
-import { SettingsIcon } from "lucide-react";
+import { SearchIcon, SettingsIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
   restaurantByIdAtom,
@@ -34,6 +34,7 @@ import { DatePicker } from "./DatePicker";
 import { FloorPlan } from "./FloorPlan";
 import { LayoutEditor } from "./LayoutEditor";
 import { ReservationForm } from "./ReservationForm";
+import { ReservationSearch } from "./ReservationSearch";
 import { StaffTab } from "./StaffTab";
 import { TableDetailPanel } from "./TableDetailPanel";
 import { ThemeToggle } from "./ThemeToggle";
@@ -107,6 +108,7 @@ export function AppShell({
   const [selectedTableId, setSelectedTableId] = useAtom(selectedTableIdAtom);
   const [view, setView] = useAtom(viewAtom);
   const [reservationDraft, setReservationDraft] = useState<ReservationDraft | null>(null);
+  const [searching, setSearching] = useState(false);
   const canWrite = canWriteRole(staff.role);
   const isOwner = isOwnerRole(staff.role);
 
@@ -133,6 +135,11 @@ export function AppShell({
           <h1 className="whitespace-nowrap text-lg font-semibold">{restaurant.name}</h1>
         )}
         <DatePicker value={selectedDate} onChange={setSelectedDate} />
+        {canWrite && (
+          <Button variant="outline" size="icon" onClick={() => setSearching(true)}>
+            <SearchIcon className="size-4" />
+          </Button>
+        )}
         <Tabs value={view} onValueChange={(v) => setView(v as View)}>
           <TabsList>
             <TabsTrigger value="floor">Floor Plan</TabsTrigger>
@@ -179,6 +186,14 @@ export function AppShell({
           restaurantId={restaurant.id}
           draft={reservationDraft}
           onClose={() => setReservationDraft(null)}
+        />
+      )}
+
+      {searching && (
+        <ReservationSearch
+          restaurantId={restaurant.id}
+          onOpenReservation={setReservationDraft}
+          onClose={() => setSearching(false)}
         />
       )}
     </div>

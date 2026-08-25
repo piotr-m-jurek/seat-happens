@@ -30,6 +30,7 @@ export function useReservationForm(
 
   const [tableIds, setTableIds] = useState(existing?.tableIds ?? draft.tableIds);
   const [guestName, setGuestName] = useState(existing?.guestName ?? "");
+  const [phone, setPhone] = useState(existing?.phone ?? "");
   // Kept as raw text (not a number) so the field can be cleared while
   // editing instead of snapping to 0 — parsed back to a number on save.
   const [partySize, setPartySize] = useState(String(existing?.partySize ?? 2));
@@ -67,6 +68,7 @@ export function useReservationForm(
       const payload: NewReservation = {
         tableIds,
         guestName,
+        phone: phone || null,
         partySize: Number(partySize),
         date,
         startTime,
@@ -105,6 +107,8 @@ export function useReservationForm(
     toggleTable,
     guestName,
     setGuestName,
+    phone,
+    setPhone,
     partySize,
     setPartySize,
     date,

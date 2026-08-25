@@ -73,6 +73,10 @@ export interface FloorPlanRepo {
 
 export interface ReservationsRepo {
   listByDate(restaurantId: number, date: string): Promise<Reservation[]>;
+  // Guest name / phone, across all dates — via a Postgres RPC rather than
+  // a PostgREST filter, since a search term can contain characters that
+  // are meaningful in PostgREST's own filter syntax.
+  search(restaurantId: number, query: string): Promise<Reservation[]>;
   create(restaurantId: number, reservation: NewReservation): Promise<Reservation>;
   update(id: number, patch: Partial<NewReservation>): Promise<Reservation>;
   remove(id: number): Promise<void>;

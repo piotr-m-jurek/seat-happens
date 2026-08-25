@@ -31,6 +31,8 @@ export function ReservationForm({
     toggleTable,
     guestName,
     setGuestName,
+    phone,
+    setPhone,
     partySize,
     setPartySize,
     date,
@@ -81,14 +83,25 @@ export function ReservationForm({
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="guestName">Guest name</Label>
-            <Input
-              id="guestName"
-              value={guestName}
-              onChange={(e) => setGuestName(e.target.value)}
-              required
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="guestName">Guest name</Label>
+              <Input
+                id="guestName"
+                value={guestName}
+                onChange={(e) => setGuestName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone (optional)</Label>
+              <Input
+                id="phone"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+              />
+            </div>
           </div>
 
           <div className="space-y-2">
