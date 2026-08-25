@@ -1,6 +1,8 @@
 import { useAtomValue } from "@effect/atom-react";
+import { effectiveStatus } from "@seat-happens/shared";
 import { reservationsAtom, reservationsKey, selectedDateAtom, tablesAtom } from "@/atoms";
 import { useCollection } from "@/atoms/collection";
+import { useNow } from "@/hooks/useNow";
 import { buildPillPlacements, buildTimeSlots } from "@/lib/timeline";
 import { ReservationPill } from "./ReservationPill";
 import { TimelineGrid } from "./TimelineGrid";
@@ -14,6 +16,7 @@ export function TimelinePage({ restaurantId }: { restaurantId: number }) {
   const selectedDate = useAtomValue(selectedDateAtom);
   const reservations = useCollection(reservationsAtom(reservationsKey(restaurantId, selectedDate)));
   const tables = useCollection(tablesAtom(restaurantId));
+  const now = useNow();
 
   const slots = buildTimeSlots(START_TIME, END_TIME, 15);
   const placements = buildPillPlacements(reservations, START_TIME, END_TIME);
@@ -30,6 +33,7 @@ export function TimelinePage({ restaurantId }: { restaurantId: number }) {
               <ReservationPill
                 key={`${p.reservation.id}-${p.tableId}`}
                 reservation={p.reservation}
+                status={effectiveStatus(p.reservation, selectedDate, now.minutes)}
                 startPercent={p.startPercent}
                 widthPercent={p.widthPercent}
               />

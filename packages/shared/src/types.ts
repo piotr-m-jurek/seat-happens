@@ -31,6 +31,8 @@ export interface Table {
   height: number;
 }
 
+export type ReservationStatus = "booked" | "seated" | "completed" | "no_show" | "cancelled";
+
 export interface Reservation {
   id: number;
   tableIds: number[];
@@ -41,6 +43,7 @@ export interface Reservation {
   startTime: string; // 'HH:MM'
   durationMin: number;
   notes: string | null;
+  status: ReservationStatus;
 }
 
 export interface Obstacle {

@@ -9,7 +9,7 @@ import { defaultReservationTime } from "../lib/reservations";
 
 // Owns every piece of ReservationForm's field state, the derived booking
 // evaluation (capacity/conflicts, via the shared use case), and the
-// save/remove actions — the component itself is just the <form> markup
+// save/cancel actions — the component itself is just the <form> markup
 // consuming this. Scoped to one component's own subtree (nothing else
 // reads reservation-form state — TableDetailPanel/AgendaList only ever
 // call onOpenReservation to *open* it), so this is a local hook, not an
@@ -74,6 +74,10 @@ export function useReservationForm(
         startTime,
         durationMin: Number(durationMin),
         notes: notes || null,
+        // Preserves the current status on an edit (e.g. saving a phone
+        // number tweak shouldn't silently reset a "seated" reservation
+        // back to "booked") — the DB default only applies to new rows.
+        status: existing?.status ?? "booked",
       };
       if (existing) {
         await reservationsRepo.update(existing.id, payload);
@@ -88,11 +92,11 @@ export function useReservationForm(
     }
   }
 
-  async function remove() {
+  async function cancel() {
     if (!existing || !confirm("Cancel this reservation?")) return;
     setBusy(true);
     try {
-      await reservationsRepo.remove(existing.id);
+      await reservationsRepo.update(existing.id, { status: "cancelled" });
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not cancel reservation.");
@@ -125,6 +129,6 @@ export function useReservationForm(
     isOverCapacity,
     conflicts,
     save,
-    remove,
+    cancel,
   };
 }

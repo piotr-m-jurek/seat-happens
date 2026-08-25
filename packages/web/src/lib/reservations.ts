@@ -1,10 +1,10 @@
 import { formatTimeOfDay } from "@seat-happens/shared";
-import type { FloorPlanSize } from "@seat-happens/shared";
+import type { FloorPlanSize, ReservationStatus } from "@seat-happens/shared";
 import * as DateTime from "effect/DateTime";
 import * as Duration from "effect/Duration";
 import type { CSSProperties } from "react";
 
-function localNow(): DateTime.Zoned {
+export function localNow(): DateTime.Zoned {
   return DateTime.setZone(DateTime.nowUnsafe(), DateTime.zoneMakeLocal());
 }
 
@@ -45,3 +45,13 @@ export function tableNamesLabel(
 ): string {
   return tableIds.map((id) => tables.find((t) => t.id === id)?.name ?? "—").join(" + ");
 }
+
+// Shared by AgendaList and TableDetailPanel's status Select, so both
+// present the same labels/order.
+export const RESERVATION_STATUS_OPTIONS: { value: ReservationStatus; label: string }[] = [
+  { value: "booked", label: "Booked" },
+  { value: "seated", label: "Seated" },
+  { value: "completed", label: "Completed" },
+  { value: "no_show", label: "No-show" },
+  { value: "cancelled", label: "Cancelled" },
+];

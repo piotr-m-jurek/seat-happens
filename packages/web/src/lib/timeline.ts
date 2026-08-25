@@ -1,4 +1,9 @@
-import { formatTimeOfDay, parseTimeOfDay, type Reservation } from "@seat-happens/shared";
+import {
+  formatTimeOfDay,
+  isCancelled,
+  parseTimeOfDay,
+  type Reservation,
+} from "@seat-happens/shared";
 import * as Duration from "effect/Duration";
 
 export interface TimeSlot {
@@ -29,7 +34,8 @@ export interface TimelinePillPlacement {
 // (tableIds.length > 1) gets one placement per table it occupies, so the
 // caller can render it in each of those tables' rows. Reservations that
 // fall outside [startTime, endTime) are clamped to the visible window
-// rather than dropped; ones entirely outside it are omitted.
+// rather than dropped; ones entirely outside it are omitted. Cancelled
+// reservations are always omitted, same as Agenda/table-detail.
 export function buildPillPlacements(
   reservations: Reservation[],
   startTime: string,
@@ -42,6 +48,7 @@ export function buildPillPlacements(
 
   const placements: TimelinePillPlacement[] = [];
   for (const reservation of reservations) {
+    if (isCancelled(reservation.status)) continue;
     const resStart = Duration.toMinutes(parseTimeOfDay(reservation.startTime));
     const resEnd = resStart + reservation.durationMin;
     const clampedStart = Math.max(resStart, startMin);

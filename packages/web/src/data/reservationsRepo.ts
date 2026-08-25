@@ -12,6 +12,7 @@ function toReservation(row: any): Reservation {
     startTime: row.start_time,
     durationMin: row.duration_min,
     notes: row.notes,
+    status: row.status,
   };
 }
 
@@ -25,6 +26,7 @@ function toRow(reservation: Partial<NewReservation>) {
   if (reservation.startTime !== undefined) row.start_time = reservation.startTime;
   if (reservation.durationMin !== undefined) row.duration_min = reservation.durationMin;
   if (reservation.notes !== undefined) row.notes = reservation.notes;
+  if (reservation.status !== undefined) row.status = reservation.status;
   return row;
 }
 

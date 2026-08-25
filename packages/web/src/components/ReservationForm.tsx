@@ -49,7 +49,7 @@ export function ReservationForm({
     isOverCapacity,
     conflicts,
     save,
-    remove,
+    cancel,
   } = useReservationForm(restaurantId, draft, onClose);
 
   return (
@@ -178,7 +178,7 @@ export function ReservationForm({
 
           <DialogFooter>
             {existing && (
-              <Button type="button" variant="destructive" disabled={busy} onClick={remove}>
+              <Button type="button" variant="destructive" disabled={busy} onClick={cancel}>
                 Cancel reservation
               </Button>
             )}

@@ -1,5 +1,5 @@
 import * as Duration from "effect/Duration";
-import type { Reservation } from "../types";
+import type { Reservation, ReservationStatus } from "../types";
 
 // A "time of day" (no date, e.g. "09:00" or the "09:00:00" Postgres sends
 // over the wire) modeled as elapsed time since midnight — Duration is the
@@ -65,4 +65,41 @@ export function reservationsForTable(reservations: Reservation[], tableId: numbe
   return reservations
     .filter((r) => r.tableIds.includes(tableId))
     .sort((a, b) => a.startTime.localeCompare(b.startTime));
+}
+
+export function isCancelled(status: ReservationStatus): boolean {
+  return status === "cancelled";
+}
+
+// Cancelled reservations are hidden from the day-to-day views (Agenda,
+// table detail, Timeline) — everything else (including completed/no-show)
+// stays visible for today's full picture.
+export function shouldShowByDefault(status: ReservationStatus): boolean {
+  return !isCancelled(status);
+}
+
+const DEFAULT_NO_SHOW_GRACE_MINUTES = 20;
+
+// A clock-derived *display* value — never written back to the database.
+// An explicit staff-set status (anything but "booked") always wins. A
+// still-"booked" reservation for today reads as "seated" while the
+// current time falls within its booked window (so the floor plan shows
+// it occupied without staff having to remember to tap "seated" for an
+// on-time guest), and as "likely_no_show" once well past the end of that
+// window with no staff action — a soft prompt, not a real status.
+export function effectiveStatus(
+  reservation: Pick<Reservation, "status" | "date" | "startTime" | "durationMin">,
+  today: string,
+  nowMinutes: number,
+  graceMinutes = DEFAULT_NO_SHOW_GRACE_MINUTES,
+): ReservationStatus | "likely_no_show" {
+  if (reservation.status !== "booked" || reservation.date !== today) {
+    return reservation.status;
+  }
+  const startMinutes = Duration.toMinutes(parseTimeOfDay(reservation.startTime));
+  const endMinutes = startMinutes + reservation.durationMin;
+  if (nowMinutes < startMinutes) return "booked";
+  if (nowMinutes <= endMinutes) return "seated";
+  if (nowMinutes > endMinutes + graceMinutes) return "likely_no_show";
+  return "booked";
 }
