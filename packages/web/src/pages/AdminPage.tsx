@@ -22,6 +22,7 @@ export function AdminPage() {
   const restaurants = useCollectionRestaurants();
   const refresh = useAtomRefresh(restaurantsListAtom);
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<Restaurant | null>(null);
   const [deleting, setDeleting] = useState<Restaurant | null>(null);
 
   if (!isSuperAdmin) {
@@ -51,6 +52,9 @@ export function AdminPage() {
                 <Button variant="outline" onClick={() => navigate(`/r/${r.slug}`)}>
                   Open
                 </Button>
+                <Button variant="outline" onClick={() => setEditing(r)}>
+                  Edit
+                </Button>
                 <Button variant="ghost" onClick={() => setDeleting(r)}>
                   Delete
                 </Button>
@@ -66,6 +70,16 @@ export function AdminPage() {
         <NewRestaurantModal
           onClose={() => {
             setCreating(false);
+            refresh();
+          }}
+        />
+      )}
+
+      {editing && (
+        <EditRestaurantModal
+          restaurant={editing}
+          onClose={() => {
+            setEditing(null);
             refresh();
           }}
         />
@@ -106,7 +120,14 @@ function NewRestaurantModal({ onClose }: { onClose: () => void }) {
     setBusy(true);
     setError(null);
     try {
-      const restaurant = await restaurantsRepo.create({ name, slug });
+      const restaurant = await restaurantsRepo.create({
+        name,
+        slug,
+        // The owner adjusts these later from their own Settings page —
+        // just needs a sane starting default here.
+        openTime: "09:00",
+        closeTime: "23:00",
+      });
       await staffRepo.invite(restaurant.id, ownerEmail, "owner");
       onClose();
     } catch (err) {
@@ -158,6 +179,70 @@ function NewRestaurantModal({ onClose }: { onClose: () => void }) {
           <DialogFooter>
             <Button type="submit" size="lg" disabled={busy}>
               {busy ? "Creating…" : "Create"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Name/slug only — the structural, rarely-changed fields. Business hours
+// live on the owner's own Settings page (RestaurantSettingsPage), not
+// here, matching who actually cares about each: a super-admin fixes
+// identity/URL problems, an owner runs day-to-day operations.
+function EditRestaurantModal({
+  restaurant,
+  onClose,
+}: {
+  restaurant: Restaurant;
+  onClose: () => void;
+}) {
+  const [name, setName] = useState(restaurant.name);
+  const [slug, setSlug] = useState(restaurant.slug);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function save(e: FormEvent) {
+    e.preventDefault();
+    if (!isValidSlug(slug)) {
+      setError("Slug must be lowercase letters, numbers, and hyphens only, e.g. pizza-place.");
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await restaurantsRepo.update(restaurant.id, { name, slug });
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not save restaurant.");
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent>
+        <form onSubmit={save} className="space-y-4">
+          <DialogHeader>
+            <DialogTitle>Edit restaurant</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-2">
+            <Label htmlFor="editName">Name</Label>
+            <Input id="editName" value={name} onChange={(e) => setName(e.target.value)} required />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="editSlug">URL slug</Label>
+            <Input id="editSlug" value={slug} onChange={(e) => setSlug(e.target.value)} required />
+          </div>
+
+          {error && <p className="text-sm text-destructive">{error}</p>}
+
+          <DialogFooter>
+            <Button type="submit" size="lg" disabled={busy}>
+              {busy ? "Saving…" : "Save"}
             </Button>
           </DialogFooter>
         </form>

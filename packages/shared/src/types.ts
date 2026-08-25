@@ -4,6 +4,8 @@ export interface Restaurant {
   id: number;
   slug: string;
   name: string;
+  openTime: string; // 'HH:MM:SS'
+  closeTime: string; // 'HH:MM:SS'
 }
 
 export interface Staff {

@@ -103,7 +103,7 @@ function initialSelectedDate(): string {
 
 export const selectedDateAtom = Atom.make(initialSelectedDate());
 export const selectedTableIdAtom = Atom.make<number | null>(null);
-export type View = "floor" | "agenda" | "timeline" | "layout" | "staff";
+export type View = "floor" | "agenda" | "timeline" | "layout" | "staff" | "settings";
 export const viewAtom = Atom.make<View>("floor");
 export const themeAtom = Atom.make<Theme>(initialTheme());
 

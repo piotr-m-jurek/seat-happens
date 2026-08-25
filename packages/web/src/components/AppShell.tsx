@@ -29,6 +29,7 @@ import { useAsyncValue } from "../atoms/collection";
 import { authRepo } from "../data/authRepo";
 import { todayISO } from "../lib/reservations";
 import { navigate, setSearchParam } from "../lib/router";
+import { RestaurantSettingsPage } from "../pages/RestaurantSettingsPage";
 import { AgendaList } from "./AgendaList";
 import { DatePicker } from "./DatePicker";
 import { FloorPlan } from "./FloorPlan";
@@ -78,7 +79,7 @@ function RestaurantSwitcher({
 // and Staff are restaurant administration, not day-to-day views the way
 // Floor Plan/Agenda/Timeline are.
 function AdminMenu({ view, onSelect }: { view: View; onSelect: (view: View) => void }) {
-  const isActive = view === "layout" || view === "staff";
+  const isActive = view === "layout" || view === "staff" || view === "settings";
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -90,6 +91,7 @@ function AdminMenu({ view, onSelect }: { view: View; onSelect: (view: View) => v
       <DropdownMenuContent align="end">
         <DropdownMenuItem onSelect={() => onSelect("layout")}>Layout</DropdownMenuItem>
         <DropdownMenuItem onSelect={() => onSelect("staff")}>Staff</DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => onSelect("settings")}>Settings</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -166,9 +168,10 @@ export function AppShell({
             onOpenReservation={setReservationDraft}
           />
         )}
-        {view === "timeline" && <TimelinePage restaurantId={restaurant.id} />}
+        {view === "timeline" && <TimelinePage restaurant={restaurant} />}
         {view === "layout" && isOwner && <LayoutEditor restaurantId={restaurant.id} />}
         {view === "staff" && isOwner && <StaffTab restaurantId={restaurant.id} />}
+        {view === "settings" && isOwner && <RestaurantSettingsPage restaurant={restaurant} />}
       </main>
 
       {selectedTableId !== null && (

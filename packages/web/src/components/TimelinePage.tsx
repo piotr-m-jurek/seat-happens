@@ -1,5 +1,5 @@
 import { useAtomValue } from "@effect/atom-react";
-import { effectiveStatus } from "@seat-happens/shared";
+import { effectiveStatus, type Restaurant } from "@seat-happens/shared";
 import { reservationsAtom, reservationsKey, selectedDateAtom, tablesAtom } from "@/atoms";
 import { useCollection } from "@/atoms/collection";
 import { useNow } from "@/hooks/useNow";
@@ -7,19 +7,16 @@ import { buildPillPlacements, buildTimeSlots } from "@/lib/timeline";
 import { ReservationPill } from "./ReservationPill";
 import { TimelineGrid } from "./TimelineGrid";
 
-// TODO: fixed business hours for now — revisit once there's a real
-// per-restaurant hours setting (or derive from the day's reservations).
-const START_TIME = "09:00";
-const END_TIME = "23:00";
-
-export function TimelinePage({ restaurantId }: { restaurantId: number }) {
+export function TimelinePage({ restaurant }: { restaurant: Restaurant }) {
   const selectedDate = useAtomValue(selectedDateAtom);
-  const reservations = useCollection(reservationsAtom(reservationsKey(restaurantId, selectedDate)));
-  const tables = useCollection(tablesAtom(restaurantId));
+  const reservations = useCollection(
+    reservationsAtom(reservationsKey(restaurant.id, selectedDate)),
+  );
+  const tables = useCollection(tablesAtom(restaurant.id));
   const now = useNow();
 
-  const slots = buildTimeSlots(START_TIME, END_TIME, 15);
-  const placements = buildPillPlacements(reservations, START_TIME, END_TIME);
+  const slots = buildTimeSlots(restaurant.openTime, restaurant.closeTime, 15);
+  const placements = buildPillPlacements(reservations, restaurant.openTime, restaurant.closeTime);
 
   return (
     <div>

@@ -35,6 +35,9 @@ export interface RestaurantsRepo {
   getById(id: number): Promise<Restaurant | null>;
   list(): Promise<Restaurant[]>;
   create(restaurant: NewRestaurant): Promise<Restaurant>;
+  // RLS allows an active owner to update their own restaurant, or a
+  // super-admin to update any restaurant.
+  update(id: number, patch: Partial<NewRestaurant>): Promise<Restaurant>;
   // Cascades at the DB level to every table/obstacle/reservation/staff row
   // scoped to this restaurant. RLS restricts this to super-admins.
   remove(id: number): Promise<void>;
