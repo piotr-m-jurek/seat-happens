@@ -1,4 +1,4 @@
-import type { FloorPlanSize, Session, Staff } from "@sit-happens/shared";
+import type { FloorPlanSize, Session, Staff } from "@seat-happens/shared";
 import { Effect } from "effect";
 import * as Atom from "effect/unstable/reactivity/Atom";
 import { authRepo } from "../data/authRepo";

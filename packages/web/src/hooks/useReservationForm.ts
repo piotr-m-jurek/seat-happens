@@ -1,5 +1,5 @@
 import { useAtomValue } from "@effect/atom-react";
-import { evaluateBooking, type NewReservation } from "@sit-happens/shared";
+import { evaluateBooking, type NewReservation } from "@seat-happens/shared";
 import { useMemo, useState, type FormEvent } from "react";
 import { reservationsAtom, reservationsKey, selectedDateAtom, tablesAtom } from "../atoms";
 import { useCollection } from "../atoms/collection";

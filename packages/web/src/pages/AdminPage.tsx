@@ -9,7 +9,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAtomRefresh } from "@effect/atom-react";
-import { isValidSlug, type Restaurant } from "@sit-happens/shared";
+import { isValidSlug, type Restaurant } from "@seat-happens/shared";
 import { useState, type FormEvent } from "react";
 import { isSuperAdminAtom, restaurantsListAtom } from "../atoms";
 import { useAsyncValue } from "../atoms/collection";

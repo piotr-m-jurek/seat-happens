@@ -1,4 +1,4 @@
-import type { NewRestaurant, Restaurant, RestaurantsRepo } from "@sit-happens/shared";
+import type { NewRestaurant, Restaurant, RestaurantsRepo } from "@seat-happens/shared";
 import { supabase } from "../lib/supabaseClient";
 
 function toRestaurant(row: any): Restaurant {

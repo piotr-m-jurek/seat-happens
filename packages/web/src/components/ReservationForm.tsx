@@ -10,7 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { addMinutes, formatTime } from "@sit-happens/shared";
+import { addMinutes, formatTime } from "@seat-happens/shared";
 import { useReservationForm } from "../hooks/useReservationForm";
 import { tableNamesLabel } from "../lib/reservations";
 import type { ReservationDraft } from "./AppShell";

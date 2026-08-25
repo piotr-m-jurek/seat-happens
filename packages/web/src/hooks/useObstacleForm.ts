@@ -1,4 +1,4 @@
-import type { Obstacle } from "@sit-happens/shared";
+import type { Obstacle } from "@seat-happens/shared";
 import { useState, type FormEvent } from "react";
 import { obstaclesRepo } from "../data/obstaclesRepo";
 

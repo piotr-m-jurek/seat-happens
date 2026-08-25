@@ -14,8 +14,8 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAtom } from "@effect/atom-react";
-import { canWrite as canWriteRole, isOwner as isOwnerRole } from "@sit-happens/shared";
-import type { Restaurant, Staff } from "@sit-happens/shared";
+import { canWrite as canWriteRole, isOwner as isOwnerRole } from "@seat-happens/shared";
+import type { Restaurant, Staff } from "@seat-happens/shared";
 import { SettingsIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import {

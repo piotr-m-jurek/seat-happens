@@ -1,6 +1,6 @@
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAtomValue } from "@effect/atom-react";
-import type { Staff } from "@sit-happens/shared";
+import type { Staff } from "@seat-happens/shared";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useEffect, useState } from "react";
 import { restaurantAtom, restaurantByIdAtom, sessionAtom, staffMembershipsAtom } from "./atoms";

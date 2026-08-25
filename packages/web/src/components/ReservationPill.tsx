@@ -1,4 +1,4 @@
-import { formatTime, type Reservation } from "@sit-happens/shared";
+import { formatTime, type Reservation } from "@seat-happens/shared";
 
 // Position-agnostic on the vertical axis — startPercent/widthPercent
 // place it horizontally within whatever "track" container it's rendered

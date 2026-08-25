@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useAtomValue } from "@effect/atom-react";
-import { reservationsForTable, type Table } from "@sit-happens/shared";
+import { reservationsForTable, type Table } from "@seat-happens/shared";
 import { reservationsAtom, reservationsKey, selectedDateAtom } from "../atoms";
 import { useCollection } from "../atoms/collection";
 

@@ -1,5 +1,5 @@
-import { formatTimeOfDay } from "@sit-happens/shared";
-import type { FloorPlanSize } from "@sit-happens/shared";
+import { formatTimeOfDay } from "@seat-happens/shared";
+import type { FloorPlanSize } from "@seat-happens/shared";
 import * as DateTime from "effect/DateTime";
 import * as Duration from "effect/Duration";
 import type { CSSProperties } from "react";

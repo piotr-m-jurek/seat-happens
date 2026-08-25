@@ -1,5 +1,5 @@
 import { useAtom } from "@effect/atom-react";
-import type { FloorPlanSize } from "@sit-happens/shared";
+import type { FloorPlanSize } from "@seat-happens/shared";
 import { useCallback, useEffect, useState } from "react";
 import { floorPlanAtom, layoutDraftAtom, obstaclesAtom, tablesAtom } from "../atoms";
 import { useAsyncValue, useCollection } from "../atoms/collection";

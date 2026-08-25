@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import type { Table } from "@sit-happens/shared";
+import type { Table } from "@seat-happens/shared";
 import { Fragment, type ReactNode } from "react";
 import type { TimeSlot } from "../lib/timeline";
 

@@ -1,4 +1,4 @@
-import type { AuthRepo, Session, Staff, StaffRole } from "@sit-happens/shared";
+import type { AuthRepo, Session, Staff, StaffRole } from "@seat-happens/shared";
 import { supabase } from "../lib/supabaseClient";
 
 function toSession(user: { id: string; email?: string | null } | null | undefined): Session | null {

@@ -1,4 +1,4 @@
-import type { NewTable, Table, TablesRepo } from "@sit-happens/shared";
+import type { NewTable, Table, TablesRepo } from "@seat-happens/shared";
 import { supabase } from "../lib/supabaseClient";
 
 function toTable(row: any): Table {

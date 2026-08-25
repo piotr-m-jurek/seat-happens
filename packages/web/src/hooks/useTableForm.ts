@@ -1,4 +1,4 @@
-import { nextDuplicateName, type Table } from "@sit-happens/shared";
+import { nextDuplicateName, type Table } from "@seat-happens/shared";
 import { useState, type FormEvent } from "react";
 import { tablesAtom } from "../atoms";
 import { useCollection } from "../atoms/collection";

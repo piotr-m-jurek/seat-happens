@@ -7,7 +7,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useAtomValue } from "@effect/atom-react";
-import { formatTime, reservationsForTable } from "@sit-happens/shared";
+import { formatTime, reservationsForTable } from "@seat-happens/shared";
 import { reservationsAtom, reservationsKey, selectedDateAtom, tablesAtom } from "../atoms";
 import { useCollection } from "../atoms/collection";
 import { reservationsRepo } from "../data/reservationsRepo";

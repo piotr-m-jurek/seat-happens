@@ -1,4 +1,4 @@
-import type { Staff, StaffInvite, StaffRepo, StaffRole } from "@sit-happens/shared";
+import type { Staff, StaffInvite, StaffRepo, StaffRole } from "@seat-happens/shared";
 import { supabase } from "../lib/supabaseClient";
 
 function toStaff(row: any): Staff {

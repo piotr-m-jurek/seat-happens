@@ -1,4 +1,4 @@
-import type { NewReservation, Reservation, ReservationsRepo } from "@sit-happens/shared";
+import type { NewReservation, Reservation, ReservationsRepo } from "@seat-happens/shared";
 import { supabase } from "../lib/supabaseClient";
 
 function toReservation(row: any): Reservation {

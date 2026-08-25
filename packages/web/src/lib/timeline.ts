@@ -1,4 +1,4 @@
-import { formatTimeOfDay, parseTimeOfDay, type Reservation } from "@sit-happens/shared";
+import { formatTimeOfDay, parseTimeOfDay, type Reservation } from "@seat-happens/shared";
 import * as Duration from "effect/Duration";
 
 export interface TimeSlot {

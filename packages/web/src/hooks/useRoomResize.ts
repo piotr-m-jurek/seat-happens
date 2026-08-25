@@ -1,4 +1,4 @@
-import type { FloorPlanSize } from "@sit-happens/shared";
+import type { FloorPlanSize } from "@seat-happens/shared";
 import { useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from "react";
 
 const MIN_ROOM_UNITS = 1.5;

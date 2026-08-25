@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useAtomValue } from "@effect/atom-react";
-import { formatTime } from "@sit-happens/shared";
+import { formatTime } from "@seat-happens/shared";
 import { reservationsAtom, reservationsKey, selectedDateAtom, tablesAtom } from "../atoms";
 import { useCollection } from "../atoms/collection";
 import { tableNamesLabel } from "../lib/reservations";

@@ -1,4 +1,4 @@
-# Sit Happens
+# Seat Happens
 
 A very simple multi-restaurant tablet app for managing table reservations:
 a top-down floor plan, tap a table to book it, an agenda view for the day,

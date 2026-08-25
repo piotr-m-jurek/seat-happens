@@ -1,4 +1,4 @@
-import type { FloorPlanRepo, FloorPlanSize } from "@sit-happens/shared";
+import type { FloorPlanRepo, FloorPlanSize } from "@seat-happens/shared";
 import { supabase } from "../lib/supabaseClient";
 
 const DEFAULT_SIZE: FloorPlanSize = { width: 4, height: 3 };

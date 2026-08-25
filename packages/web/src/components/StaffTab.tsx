@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAtomRefresh } from "@effect/atom-react";
-import { canRemoveStaffMember, type StaffRole } from "@sit-happens/shared";
+import { canRemoveStaffMember, type StaffRole } from "@seat-happens/shared";
 import { useState, type FormEvent } from "react";
 import { staffInvitesAtom, staffListAtom } from "../atoms";
 import { useAsyncValue } from "../atoms/collection";

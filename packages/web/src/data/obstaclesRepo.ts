@@ -1,4 +1,4 @@
-import type { NewObstacle, Obstacle, ObstaclesRepo } from "@sit-happens/shared";
+import type { NewObstacle, Obstacle, ObstaclesRepo } from "@seat-happens/shared";
 import { supabase } from "../lib/supabaseClient";
 
 function toObstacle(row: any): Obstacle {

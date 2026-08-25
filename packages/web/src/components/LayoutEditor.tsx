@@ -9,7 +9,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import type { Obstacle, Table } from "@sit-happens/shared";
+import type { Obstacle, Table } from "@seat-happens/shared";
 import { useRef, useState, type PointerEvent as ReactPointerEvent, type RefObject } from "react";
 import { useDragAndResize } from "../hooks/useDragAndResize";
 import { useLayoutDraft } from "../hooks/useLayoutDraft";

@@ -1,5 +1,5 @@
 {
-  "name": "@sit-happens/web",
+  "name": "@seat-happens/web",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "@effect/atom-react": "^4.0.0-rc.111",
-    "@sit-happens/shared": "workspace:*",
+    "@seat-happens/shared": "workspace:*",
     "@supabase/supabase-js": "^2",
     "@tailwindcss/vite": "^4.3.3",
     "class-variance-authority": "^0.7.1",
