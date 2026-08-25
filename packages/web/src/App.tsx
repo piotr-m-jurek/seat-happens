@@ -8,6 +8,7 @@ import { useAsyncValue } from "./atoms/collection";
 import { AppShell } from "./components/AppShell";
 import { LandingPage } from "./components/LandingPage";
 import { LoginForm } from "./components/LoginForm";
+import { OfflineBanner } from "./components/OfflineBanner";
 import { navigate, useRoute } from "./lib/router";
 import { AdminPage } from "./pages/AdminPage";
 
@@ -108,7 +109,7 @@ function RestaurantRoute({ slug, memberships }: { slug: string; memberships: Sta
   return <AppShell staff={staff} restaurant={restaurant} memberships={memberships} />;
 }
 
-export default function App() {
+function AppContent() {
   const route = useRoute();
   const sessionResult = useAtomValue(sessionAtom);
   const membershipsResult = useAtomValue(staffMembershipsAtom);
@@ -139,4 +140,17 @@ export default function App() {
   }
 
   return <HomeRoute memberships={memberships} />;
+}
+
+// OfflineBanner lives here, above all routing, so it's visible regardless
+// of auth state or which route is active.
+export default function App() {
+  return (
+    <div className="flex h-full flex-col">
+      <OfflineBanner />
+      <div className="min-h-0 flex-1">
+        <AppContent />
+      </div>
+    </div>
+  );
 }
