@@ -1,5 +1,11 @@
 import { Button } from "@/components/ui/button";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -10,8 +16,15 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAtom } from "@effect/atom-react";
 import { canWrite as canWriteRole, isOwner as isOwnerRole } from "@sit-happens/shared";
 import type { Restaurant, Staff } from "@sit-happens/shared";
+import { SettingsIcon } from "lucide-react";
 import { useEffect, useState } from "react";
-import { restaurantByIdAtom, selectedDateAtom, selectedTableIdAtom, viewAtom } from "../atoms";
+import {
+  restaurantByIdAtom,
+  selectedDateAtom,
+  selectedTableIdAtom,
+  viewAtom,
+  type View,
+} from "../atoms";
 import { useAsyncValue } from "../atoms/collection";
 import { authRepo } from "../data/authRepo";
 import { todayISO } from "../lib/reservations";
@@ -24,6 +37,7 @@ import { ReservationForm } from "./ReservationForm";
 import { StaffTab } from "./StaffTab";
 import { TableDetailPanel } from "./TableDetailPanel";
 import { ThemeToggle } from "./ThemeToggle";
+import { TimelinePage } from "./TimelinePage";
 
 export interface ReservationDraft {
   id?: number;
@@ -56,6 +70,27 @@ function RestaurantSwitcher({
         ))}
       </SelectContent>
     </Select>
+  );
+}
+
+// Owner-only, and deliberately not part of the main Tabs group — Layout
+// and Staff are restaurant administration, not day-to-day views the way
+// Floor Plan/Agenda/Timeline are.
+function AdminMenu({ view, onSelect }: { view: View; onSelect: (view: View) => void }) {
+  const isActive = view === "layout" || view === "staff";
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant={isActive ? "secondary" : "outline"} size="sm">
+          <SettingsIcon className="size-4" />
+          Admin
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onSelect={() => onSelect("layout")}>Layout</DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => onSelect("staff")}>Staff</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -98,18 +133,16 @@ export function AppShell({
           <h1 className="whitespace-nowrap text-lg font-semibold">{restaurant.name}</h1>
         )}
         <DatePicker value={selectedDate} onChange={setSelectedDate} />
-        <Tabs
-          value={view}
-          onValueChange={(v) => setView(v as "floor" | "agenda" | "layout" | "staff")}
-        >
+        <Tabs value={view} onValueChange={(v) => setView(v as View)}>
           <TabsList>
             <TabsTrigger value="floor">Floor Plan</TabsTrigger>
             <TabsTrigger value="agenda">Agenda</TabsTrigger>
-            {canWrite && <TabsTrigger value="layout">Layout</TabsTrigger>}
-            {isOwner && <TabsTrigger value="staff">Staff</TabsTrigger>}
+            <TabsTrigger value="timeline">Timeline</TabsTrigger>
           </TabsList>
         </Tabs>
         <div className="flex-1" />
+        {isOwner && <AdminMenu view={view} onSelect={setView} />}
+        <div className="h-6 w-px bg-border" />
         <ThemeToggle />
         <span className="text-sm text-muted-foreground">{staff.email}</span>
         <Button variant="ghost" onClick={signOut}>
@@ -126,7 +159,8 @@ export function AppShell({
             onOpenReservation={setReservationDraft}
           />
         )}
-        {view === "layout" && canWrite && <LayoutEditor restaurantId={restaurant.id} />}
+        {view === "timeline" && <TimelinePage restaurantId={restaurant.id} />}
+        {view === "layout" && isOwner && <LayoutEditor restaurantId={restaurant.id} />}
         {view === "staff" && isOwner && <StaffTab restaurantId={restaurant.id} />}
       </main>
 

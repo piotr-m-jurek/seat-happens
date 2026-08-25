@@ -103,7 +103,8 @@ function initialSelectedDate(): string {
 
 export const selectedDateAtom = Atom.make(initialSelectedDate());
 export const selectedTableIdAtom = Atom.make<number | null>(null);
-export const viewAtom = Atom.make<"floor" | "agenda" | "layout" | "staff">("floor");
+export type View = "floor" | "agenda" | "timeline" | "layout" | "staff";
+export const viewAtom = Atom.make<View>("floor");
 export const themeAtom = Atom.make<Theme>(initialTheme());
 
 // Local unsaved edits from the Layout tab (position/size/deletion) — kept
