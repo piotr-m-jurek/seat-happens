@@ -248,6 +248,12 @@ otp_expiry = 3600
 # subject = "You have been invited"
 # content_path = "./supabase/templates/invite.html"
 
+# signInWithOtp() (used for the email-code sign-in flow) always sends the
+# "Magic Link" template, whether or not the user already exists.
+[auth.email.template.magic_link]
+subject = "Your Seat Happens sign-in code"
+content_path = "./supabase/templates/magic_link.html"
+
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]
 # enabled = true
