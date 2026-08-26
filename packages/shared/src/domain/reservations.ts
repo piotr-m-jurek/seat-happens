@@ -55,6 +55,8 @@ export function overlappingReservations(
   return reservations.filter(
     (r) =>
       r.id !== excludeId &&
+      r.status !== "cancelled" &&
+      r.status !== "no_show" &&
       r.date === date &&
       r.tableIds.some((id) => tableIds.includes(id)) &&
       timeRangesOverlap(r.startTime, r.durationMin, startTime, durationMin),
