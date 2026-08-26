@@ -13,6 +13,7 @@ import { isValidSlug, type Restaurant } from "@seat-happens/shared";
 import { useState, type FormEvent } from "react";
 import { isSuperAdminAtom, restaurantsListAtom } from "../atoms";
 import { useAsyncValue } from "../atoms/collection";
+import { authRepo } from "../data/authRepo";
 import { restaurantsRepo } from "../data/restaurantsRepo";
 import { staffRepo } from "../data/staffRepo";
 import { navigate } from "../lib/router";
@@ -27,8 +28,11 @@ export function AdminPage() {
 
   if (!isSuperAdmin) {
     return (
-      <div className="flex h-full items-center justify-center text-muted-foreground">
+      <div className="flex h-full flex-col items-center justify-center gap-4 text-muted-foreground">
         Not authorized.
+        <Button variant="outline" onClick={() => authRepo.signOut()}>
+          Sign out
+        </Button>
       </div>
     );
   }
@@ -37,7 +41,12 @@ export function AdminPage() {
     <div className="mx-auto max-w-2xl space-y-4 p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold">Restaurants</h1>
-        <Button onClick={() => setCreating(true)}>+ New restaurant</Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setCreating(true)}>+ New restaurant</Button>
+          <Button variant="outline" onClick={() => authRepo.signOut()}>
+            Sign out
+          </Button>
+        </div>
       </div>
 
       {restaurants.length > 0 ? (
