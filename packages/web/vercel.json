@@ -1,0 +1,4 @@
+{
+  "installCommand": "bunx bun@1.4.0 install",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}
