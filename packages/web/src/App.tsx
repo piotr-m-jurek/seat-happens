@@ -3,7 +3,13 @@ import { useAtomValue } from "@effect/atom-react";
 import type { Staff } from "@seat-happens/shared";
 import * as AsyncResult from "effect/unstable/reactivity/AsyncResult";
 import { useEffect, useState } from "react";
-import { restaurantAtom, restaurantByIdAtom, sessionAtom, staffMembershipsAtom } from "./atoms";
+import {
+  isSuperAdminAtom,
+  restaurantAtom,
+  restaurantByIdAtom,
+  sessionAtom,
+  staffMembershipsAtom,
+} from "./atoms";
 import { useAsyncValue } from "./atoms/collection";
 import { AppShell } from "./components/AppShell";
 import { LandingPage } from "./components/LandingPage";
@@ -86,7 +92,15 @@ function HomeRoute({ memberships }: { memberships: Staff[] }) {
   return <Loading />;
 }
 
-function RestaurantRoute({ slug, memberships }: { slug: string; memberships: Staff[] }) {
+function RestaurantRoute({
+  slug,
+  memberships,
+  isSuperAdmin,
+}: {
+  slug: string;
+  memberships: Staff[];
+  isSuperAdmin: boolean;
+}) {
   const result = useAtomValue(restaurantAtom(slug));
 
   if (AsyncResult.isInitial(result)) {
@@ -99,6 +113,13 @@ function RestaurantRoute({ slug, memberships }: { slug: string; memberships: Sta
   }
   const staff = memberships.find((m) => m.restaurantId === restaurant.id);
   if (!staff) {
+    // Landed on a restaurant they're not staff at (stale link, typo'd
+    // slug) — send them to their own restaurant instead of a dead end.
+    // Super-admins are exempt: browsing other restaurants from /admin is
+    // expected for them, not a mistake to redirect away from.
+    if (!isSuperAdmin) {
+      return <HomeRoute memberships={memberships} />;
+    }
     return (
       <InfoCard
         title="Not set up yet"
@@ -113,10 +134,14 @@ function AppContent() {
   const route = useRoute();
   const sessionResult = useAtomValue(sessionAtom);
   const membershipsResult = useAtomValue(staffMembershipsAtom);
+  const isSuperAdminResult = useAtomValue(isSuperAdminAtom);
   const authReady =
-    !AsyncResult.isInitial(sessionResult) && !AsyncResult.isInitial(membershipsResult);
+    !AsyncResult.isInitial(sessionResult) &&
+    !AsyncResult.isInitial(membershipsResult) &&
+    !AsyncResult.isInitial(isSuperAdminResult);
   const session = AsyncResult.getOrElse(sessionResult, () => null);
   const memberships = AsyncResult.getOrElse(membershipsResult, () => []);
+  const isSuperAdmin = AsyncResult.getOrElse(isSuperAdminResult, () => false);
   const [showLogin, setShowLogin] = useState(false);
 
   if (!authReady) {
@@ -132,11 +157,15 @@ function AppContent() {
   }
 
   if (route.kind === "admin") {
-    return <AdminPage />;
+    // A non-admin landing on /admin (stale link, typo) goes to their own
+    // restaurant instead of a bare "Not authorized" dead end.
+    return isSuperAdmin ? <AdminPage /> : <HomeRoute memberships={memberships} />;
   }
 
   if (route.kind === "restaurant") {
-    return <RestaurantRoute slug={route.slug} memberships={memberships} />;
+    return (
+      <RestaurantRoute slug={route.slug} memberships={memberships} isSuperAdmin={isSuperAdmin} />
+    );
   }
 
   return <HomeRoute memberships={memberships} />;
